@@ -38,6 +38,23 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 			return true;
 		},
 	});
+
+	plugin.addCommand({
+		id: "create-child-note",
+		name: "Create Child",
+		checkCallback: (checking) => {
+			const file = plugin.app.workspace.getActiveFile();
+			if (!file || file.extension !== "md" || file.path === DEBUG_NOTE_PATH) {
+				return false;
+			}
+
+			if (!checking) {
+				void createChildNote(plugin, file);
+			}
+
+			return true;
+		},
+	});
 }
 
 async function placeCurrentNoteAtEnd(plugin: AngryLuhmannPlugin, file: TFile) {
@@ -80,4 +97,42 @@ async function placeNoteAsChild(plugin: AngryLuhmannPlugin, file: TFile) {
 	});
 
 	modal.open();
+}
+
+async function createChildNote(plugin: AngryLuhmannPlugin, file: TFile) {
+	const cache = plugin.app.metadataCache.getFileCache(file);
+	const parentId = cache?.frontmatter?.["zk-id"];
+
+	if (parentId === undefined) {
+		new Notice("Current note has no zk-id");
+		return;
+	}
+
+	const parentIdStr = String(parentId);
+	const childId = findNextChildId(parentIdStr, plugin.app, DEBUG_NOTE_PATH);
+
+	const parentFolder = plugin.app.fileManager.getNewFileParent(file.path);
+	const baseName = `Child of ${file.basename}`.trim();
+	const targetPath = getUniqueNotePath(plugin, parentFolder.path, baseName);
+
+	const content = `---\nzk-id: ${childId}\n---\n\n`;
+	const newFile = await plugin.app.vault.create(targetPath, content);
+
+	new Notice(`Created child ${childId}`);
+	await plugin.refreshTree();
+	await plugin.app.workspace.openLinkText(newFile.path, "", false);
+}
+
+function getUniqueNotePath(plugin: AngryLuhmannPlugin, folderPath: string, baseName: string): string {
+	let name = baseName || "Untitled";
+	let attempt = 0;
+
+	while (true) {
+		const candidateName = attempt === 0 ? name : `${name} ${attempt}`;
+		const candidatePath = folderPath ? `${folderPath}/${candidateName}.md` : `${candidateName}.md`;
+		if (!plugin.app.vault.getAbstractFileByPath(candidatePath)) {
+			return candidatePath;
+		}
+		attempt += 1;
+	}
 }
