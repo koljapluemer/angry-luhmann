@@ -78,3 +78,30 @@ export function findNextChildId(parentId: string, app: App, ignorePath: string =
 
 	return `${parentId}.${maxChild + 1}`;
 }
+
+export function findNextFollowingId(currentId: string, app: App, ignorePath: string = DEBUG_NOTE_PATH): string | null {
+	if (!ZK_ID_PATTERN.test(currentId)) {
+		return null;
+	}
+
+	const entries = collectZkEntries(app, ignorePath);
+	const used = new Set(entries.map((e) => e.id.trim()));
+	const parts = currentId.split(".");
+	const parentParts = parts.slice(0, -1);
+	const parentPrefix = parentParts.length ? `${parentParts.join(".")}.` : "";
+	const currentNumber = Number(parts[parts.length - 1]);
+
+	if (Number.isNaN(currentNumber)) {
+		return null;
+	}
+
+	let candidate = currentNumber + 1;
+	let nextId = `${parentPrefix}${candidate}`;
+
+	while (used.has(nextId)) {
+		candidate += 1;
+		nextId = `${parentPrefix}${candidate}`;
+	}
+
+	return nextId;
+}

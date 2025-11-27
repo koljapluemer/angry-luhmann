@@ -1,6 +1,6 @@
 import { Notice, TFile } from "obsidian";
 import { DEBUG_NOTE_PATH } from "./constants";
-import { findNextChildId, findNextTopLevelId, listPlacableParents } from "./zkData";
+import { findNextChildId, findNextFollowingId, findNextTopLevelId, listPlacableParents } from "./zkData";
 import { PlaceChildModal } from "./placeChildModal";
 import type AngryLuhmannPlugin from "./main";
 
@@ -50,6 +50,23 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 
 			if (!checking) {
 				void createChildNote(plugin, file);
+			}
+
+			return true;
+		},
+	});
+
+	plugin.addCommand({
+		id: "create-following-note",
+		name: "Create Following Note",
+		checkCallback: (checking) => {
+			const file = plugin.app.workspace.getActiveFile();
+			if (!file || file.extension !== "md" || file.path === DEBUG_NOTE_PATH) {
+				return false;
+			}
+
+			if (!checking) {
+				void createFollowingNote(plugin, file);
 			}
 
 			return true;
@@ -135,4 +152,32 @@ function getUniqueNotePath(plugin: AngryLuhmannPlugin, folderPath: string, baseN
 		}
 		attempt += 1;
 	}
+}
+
+async function createFollowingNote(plugin: AngryLuhmannPlugin, file: TFile) {
+	const cache = plugin.app.metadataCache.getFileCache(file);
+	const currentId = cache?.frontmatter?.["zk-id"];
+
+	if (currentId === undefined) {
+		new Notice("Current note has no zk-id");
+		return;
+	}
+
+	const currentIdStr = String(currentId).trim();
+	const nextId = findNextFollowingId(currentIdStr, plugin.app, DEBUG_NOTE_PATH);
+
+	if (!nextId) {
+		new Notice("Cannot determine next position");
+		return;
+	}
+
+	const parentFolder = plugin.app.fileManager.getNewFileParent(file.path);
+	const baseName = `Following ${file.basename}`.trim();
+	const targetPath = getUniqueNotePath(plugin, parentFolder.path, baseName);
+	const content = `---\nzk-id: ${nextId}\n---\n\n`;
+	const newFile = await plugin.app.vault.create(targetPath, content);
+
+	new Notice(`Created following note ${nextId}`);
+	await plugin.refreshTree();
+	await plugin.app.workspace.openLinkText(newFile.path, "", false);
 }
