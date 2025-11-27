@@ -51,3 +51,30 @@ export function findNextTopLevelId(app: App, ignorePath: string = DEBUG_NOTE_PAT
 
 	return maxId + 1;
 }
+
+export function listPlacableParents(app: App, ignorePath: string = DEBUG_NOTE_PATH): ZkEntry[] {
+	return collectZkEntries(app, ignorePath);
+}
+
+export function findNextChildId(parentId: string, app: App, ignorePath: string = DEBUG_NOTE_PATH): string {
+	const depth = parentId.split(".").length + 1;
+	let maxChild = -1;
+
+	for (const entry of collectZkEntries(app, ignorePath)) {
+		if (!entry.id.startsWith(`${parentId}.`)) {
+			continue;
+		}
+
+		const parts = entry.id.split(".");
+		if (parts.length !== depth) {
+			continue;
+		}
+
+		const last = Number(parts[parts.length - 1]);
+		if (!Number.isNaN(last)) {
+			maxChild = Math.max(maxChild, last);
+		}
+	}
+
+	return `${parentId}.${maxChild + 1}`;
+}
