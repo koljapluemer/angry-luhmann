@@ -18,7 +18,7 @@ export interface RenderedZkLine {
 	file: TFile;
 }
 
-const ZK_ID_PATTERN = /^\d+(?:\.\d+)*$/;
+export const ZK_ID_PATTERN = /^\d+(?:\.\d+)*$/;
 
 export function buildZkTree(entries: ZkEntry[], warn: (message: string) => void): ZkNode[] {
 	const uniqueEntries = dedupeAndValidate(entries, warn);
