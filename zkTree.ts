@@ -12,6 +12,12 @@ export interface ZkNode {
 	children: ZkNode[];
 }
 
+export interface RenderedZkLine {
+	prefix: string;
+	name: string;
+	file: TFile;
+}
+
 const ZK_ID_PATTERN = /^\d+(?:\.\d+)*$/;
 
 export function buildZkTree(entries: ZkEntry[], warn: (message: string) => void): ZkNode[] {
@@ -58,8 +64,8 @@ export function buildZkTree(entries: ZkEntry[], warn: (message: string) => void)
 	return roots;
 }
 
-export function renderZkTree(nodes: ZkNode[]): string {
-	const lines: string[] = [];
+export function renderZkTree(nodes: ZkNode[]): RenderedZkLine[] {
+	const lines: RenderedZkLine[] = [];
 	const sortedRoots = sortNodes(nodes);
 
 	for (let i = 0; i < sortedRoots.length; i++) {
@@ -68,17 +74,14 @@ export function renderZkTree(nodes: ZkNode[]): string {
 		renderNode(node, [], isLast, lines);
 	}
 
-	return lines.join("\n");
+	return lines;
 }
 
-function renderNode(node: ZkNode, ancestors: boolean[], isLast: boolean, lines: string[]) {
-	if (ancestors.length === 0) {
-		lines.push(node.file.basename);
-	} else {
-		const prefix = ancestors.slice(0, -1).map((ancestorIsLast) => ancestorIsLast ? "   " : "|  ").join("");
-		const connector = isLast ? "∟" : "├";
-		lines.push(`${prefix}${connector}${node.file.basename}`);
-	}
+function renderNode(node: ZkNode, ancestors: boolean[], isLast: boolean, lines: RenderedZkLine[]) {
+	const prefixParts = ancestors.slice(0, -1).map((ancestorIsLast) => (ancestorIsLast ? "   " : "|  "));
+	const connector = ancestors.length ? (isLast ? "∟" : "├") : "";
+	const prefix = `${prefixParts.join("")}${connector}`;
+	lines.push({ prefix, name: node.file.basename, file: node.file });
 
 	const nextAncestors = [...ancestors, isLast];
 	const children = sortNodes(node.children);

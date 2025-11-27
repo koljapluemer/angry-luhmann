@@ -1,5 +1,5 @@
 import { App, ItemView, Notice, Plugin, PluginSettingTab, Setting, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
-import { ZkEntry, buildZkTree, renderZkTree } from "./zkTree";
+import { RenderedZkLine, ZkEntry, buildZkTree, renderZkTree } from "./zkTree";
 
 const VIEW_TYPE_ZK_TREE = "luhmann-zk-tree";
 const EMPTY_STATE_TEXT = "No zk-id notes found. Use refresh to recheck.";
@@ -14,7 +14,8 @@ const DEFAULT_SETTINGS: AngryLuhmannSettings = {
 };
 
 class ZkTreeView extends ItemView {
-	private treeText = EMPTY_STATE_TEXT;
+	private treeLines: RenderedZkLine[] = [];
+	private emptyState = EMPTY_STATE_TEXT;
 	private treeEl: HTMLElement | null = null;
 	private refreshHandler: (() => Promise<void>) | null;
 
@@ -35,12 +36,10 @@ class ZkTreeView extends ItemView {
 		return "git-branch";
 	}
 
-	setTree(treeText: string) {
-		this.treeText = treeText;
-
-		if (this.treeEl) {
-			this.treeEl.setText(treeText);
-		}
+	setTree(lines: RenderedZkLine[], emptyState: string) {
+		this.treeLines = lines;
+		this.emptyState = emptyState;
+		this.renderTree();
 	}
 
 	async onOpen() {
@@ -55,12 +54,34 @@ class ZkTreeView extends ItemView {
 			}
 		});
 
-		this.treeEl = this.contentEl.createEl("pre", { cls: "zk-tree" });
-		this.treeEl.setText(this.treeText);
+		this.treeEl = this.contentEl.createDiv({ cls: "zk-tree" });
+		this.renderTree();
 	}
 
 	async onClose() {
 		this.treeEl = null;
+	}
+
+	private renderTree() {
+		if (!this.treeEl) {
+			return;
+		}
+
+		this.treeEl.empty();
+		if (this.treeLines.length === 0) {
+			this.treeEl.setText(this.emptyState);
+			return;
+		}
+
+		for (const line of this.treeLines) {
+			const lineEl = this.treeEl.createDiv({ cls: "zk-line" });
+			lineEl.createSpan({ text: line.prefix, cls: "zk-prefix" });
+			const link = lineEl.createEl("a", { text: line.name, cls: "zk-link" });
+			link.addEventListener("click", (evt) => {
+				evt.preventDefault();
+				this.app.workspace.openLinkText(line.file.path, "", false);
+			});
+		}
 	}
 }
 
@@ -163,18 +184,19 @@ export default class AngryLuhmannPlugin extends Plugin {
 				new Notice(message);
 			};
 			const tree = buildZkTree(entries, warn);
-			const treeText = tree.length ? renderZkTree(tree) : EMPTY_STATE_TEXT;
+			const renderedLines = tree.length ? renderZkTree(tree) : [];
+			const treeText = renderedLines.length ? "" : EMPTY_STATE_TEXT;
 
-			for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_ZK_TREE)) {
-				const view = leaf.view;
+		for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_ZK_TREE)) {
+			const view = leaf.view;
 
-				if (view instanceof ZkTreeView) {
-					view.setTree(treeText);
-				}
+			if (view instanceof ZkTreeView) {
+				view.setTree(renderedLines, treeText);
 			}
+		}
 
-			if (this.settings.useDebugNote) {
-				await this.writeDebugNote(entries, errors);
+		if (this.settings.useDebugNote) {
+			await this.writeDebugNote(entries, errors);
 			}
 		} finally {
 			this.isRefreshing = false;
