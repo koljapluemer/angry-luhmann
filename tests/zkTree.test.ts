@@ -44,9 +44,9 @@ describe('zkTree rendering', () => {
 		// Expected output:
 		// note1                    (prefix: "")
 		// └──note1-1               (prefix: "└──")
-		// │   ├──note1-1-1        (prefix: "│   ├──")
-		// │   ├──note1-1-2        (prefix: "│   ├──")
-		// │   └──note1-1-3        (prefix: "│   └──")
+		//     ├──note1-1-1        (prefix: "    ├──")
+		//     ├──note1-1-2        (prefix: "    ├──")
+		//     └──note1-1-3        (prefix: "    └──")
 		// note2                    (prefix: "")
 		// note3                    (prefix: "")
 
@@ -56,18 +56,18 @@ describe('zkTree rendering', () => {
 		expect(result[0].prefix).toBe('');
 		expect(result[0].name).toBe('note1');
 
-		// Child 1.1 (last child, so └──)
+		// Child 1.1
 		expect(result[1].prefix).toBe('└──');
 		expect(result[1].name).toBe('note1-1');
 
-		// Grandchildren 1.1.1, 1.1.2, 1.1.3 (│ continues because root1 has siblings below)
-		expect(result[2].prefix).toBe('│   ├──');
+		// Grandchildren 1.1.1, 1.1.2, 1.1.3
+		expect(result[2].prefix).toBe('    ├──');
 		expect(result[2].name).toBe('note1-1-1');
 
-		expect(result[3].prefix).toBe('│   ├──');
+		expect(result[3].prefix).toBe('    ├──');
 		expect(result[3].name).toBe('note1-1-2');
 
-		expect(result[4].prefix).toBe('│   └──');
+		expect(result[4].prefix).toBe('    └──');
 		expect(result[4].name).toBe('note1-1-3');
 
 		// Root 2
