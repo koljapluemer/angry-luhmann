@@ -78,8 +78,8 @@ export function renderZkTree(nodes: ZkNode[]): RenderedZkLine[] {
 }
 
 function renderNode(node: ZkNode, ancestors: boolean[], isLast: boolean, lines: RenderedZkLine[]) {
-	const prefixParts = ancestors.slice(0, -1).map((ancestorIsLast) => (ancestorIsLast ? "   " : "|  "));
-	const connector = ancestors.length ? (isLast ? "∟" : "├") : "";
+	const prefixParts = ancestors.slice(0, -1).map((ancestorIsLast) => (ancestorIsLast ? "    " : "│   "));
+	const connector = ancestors.length ? (isLast ? "└──" : "├──") : "";
 	const prefix = `${prefixParts.join("")}${connector}`;
 	lines.push({ prefix, name: node.file.basename, file: node.file });
 
