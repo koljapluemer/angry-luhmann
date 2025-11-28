@@ -87,7 +87,7 @@ async function placeCurrentNoteAtEnd(plugin: AngryLuhmannPlugin, file: TFile) {
 	const idValue = String(nextId);
 
 	await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
-		frontmatter["zk-id"] = `'${idValue}'`;
+		frontmatter["zk-id"] = String(idValue);
 	});
 
 	new Notice(`Placed note as ${idValue}`);
@@ -107,7 +107,7 @@ async function placeNoteAsChild(plugin: AngryLuhmannPlugin, file: TFile) {
 	const modal = new PlaceChildModal(plugin.app, parents, async (parent) => {
 		const nextId = findNextChildId(parent.id, plugin.app, DEBUG_NOTE_PATH);
 		await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
-			frontmatter["zk-id"] = `'${nextId}'`;
+			frontmatter["zk-id"] = String(nextId);
 		});
 		new Notice(`Placed note as ${nextId}`);
 		await plugin.refreshTree();
@@ -132,7 +132,7 @@ async function createChildNote(plugin: AngryLuhmannPlugin, file: TFile) {
 	const baseName = `Child of ${file.basename}`.trim();
 	const targetPath = getUniqueNotePath(plugin, parentFolder.path, baseName);
 
-	const content = `---\nzk-id: '${childId}'\n---\n\n`;
+	const content = `---\nzk-id: "${String(childId)}"\n---\n\n`;
 	const newFile = await plugin.app.vault.create(targetPath, content);
 
 	new Notice(`Created child ${childId}`);
@@ -174,7 +174,7 @@ async function createFollowingNote(plugin: AngryLuhmannPlugin, file: TFile) {
 	const parentFolder = plugin.app.fileManager.getNewFileParent(file.path);
 	const baseName = `Following ${file.basename}`.trim();
 	const targetPath = getUniqueNotePath(plugin, parentFolder.path, baseName);
-	const content = `---\nzk-id: '${nextId}'\n---\n\n`;
+	const content = `---\nzk-id: "${String(nextId)}"\n---\n\n`;
 	const newFile = await plugin.app.vault.create(targetPath, content);
 
 	new Notice(`Created following note ${nextId}`);
