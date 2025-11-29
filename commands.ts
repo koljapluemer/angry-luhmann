@@ -1,7 +1,10 @@
 import { Notice, TFile } from "obsidian";
 import { DEBUG_NOTE_PATH } from "./constants";
-import { findNextChildId, findNextFollowingId, findNextTopLevelId, listPlacableParents } from "./zkData";
+import { findNextChildId, findNextFollowingId, findNextTopLevelId, listPlacableParents, collectZkEntries } from "./zkData";
 import { PlaceChildModal } from "./placeChildModal";
+import { ConfirmationModal } from "./confirmationModal";
+import { generateNavigationLink, removeNavigationLinks } from "./navigationLinks";
+import { buildZkTree, getDepthFirstOrder } from "./zkTree";
 import type AngryLuhmannPlugin from "./main";
 
 export function registerCommands(plugin: AngryLuhmannPlugin) {
@@ -70,6 +73,20 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 			}
 
 			return true;
+		},
+	});
+
+	plugin.addCommand({
+		id: "add-navigation-links",
+		name: "Add id-based links to all notes",
+		checkCallback: (checking) => {
+			const hasZkNotes = collectZkEntries(plugin.app, DEBUG_NOTE_PATH).length > 0;
+
+			if (!checking && hasZkNotes) {
+				void addNavigationLinksToAllNotes(plugin);
+			}
+
+			return hasZkNotes;
 		},
 	});
 }
@@ -180,4 +197,52 @@ async function createFollowingNote(plugin: AngryLuhmannPlugin, file: TFile) {
 	new Notice(`Created following note ${nextId}`);
 	await plugin.refreshTree();
 	await plugin.app.workspace.openLinkText(newFile.path, "", false);
+}
+
+async function addNavigationLinksToAllNotes(plugin: AngryLuhmannPlugin) {
+	const entries = collectZkEntries(plugin.app, DEBUG_NOTE_PATH);
+	const tree = buildZkTree(entries, (msg) => console.warn(msg));
+	const filesInOrder = getDepthFirstOrder(tree);
+
+	const message =
+		`This will add navigation links to ${filesInOrder.length} notes. ` +
+		`This operation will modify file contents. Continue?`;
+
+	const modal = new ConfirmationModal(plugin.app, message, async () => {
+		await processNavigationLinks(plugin, filesInOrder);
+	});
+
+	modal.open();
+}
+
+async function processNavigationLinks(plugin: AngryLuhmannPlugin, filesInOrder: TFile[]) {
+	let successCount = 0;
+	let errorCount = 0;
+
+	new Notice(`Processing ${filesInOrder.length} notes...`);
+
+	for (let i = 0; i < filesInOrder.length; i++) {
+		const file = filesInOrder[i];
+		const prevFile = i > 0 ? filesInOrder[i - 1] : null;
+		const nextFile = i < filesInOrder.length - 1 ? filesInOrder[i + 1] : null;
+
+		try {
+			const content = await plugin.app.vault.read(file);
+			const cleanedContent = removeNavigationLinks(content);
+			const navLink = generateNavigationLink(prevFile, nextFile);
+			const newContent = cleanedContent + navLink;
+
+			await plugin.app.vault.modify(file, newContent);
+			successCount++;
+		} catch (error) {
+			errorCount++;
+			console.error(`Failed to process ${file.basename}:`, error);
+		}
+	}
+
+	if (errorCount === 0) {
+		new Notice(`Successfully added navigation links to ${successCount} notes`);
+	} else {
+		new Notice(`Added links to ${successCount} notes, ${errorCount} failed. Check console for details.`);
+	}
 }

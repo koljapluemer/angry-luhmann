@@ -133,3 +133,22 @@ function sortChildren(nodes: ZkNode[]) {
 function sortNodes(nodes: ZkNode[]) {
 	return [...nodes].sort((a, b) => a.part - b.part);
 }
+
+export function getDepthFirstOrder(roots: ZkNode[]): TFile[] {
+	const result: TFile[] = [];
+	const sortedRoots = sortNodes(roots);
+
+	function traverse(node: ZkNode) {
+		result.push(node.file);
+		const sortedChildren = sortNodes(node.children);
+		for (const child of sortedChildren) {
+			traverse(child);
+		}
+	}
+
+	for (const root of sortedRoots) {
+		traverse(root);
+	}
+
+	return result;
+}
