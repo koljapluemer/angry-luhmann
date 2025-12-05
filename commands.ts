@@ -1,5 +1,4 @@
 import { Notice, TFile } from "obsidian";
-import { DEBUG_NOTE_PATH } from "./constants";
 import { findNextChildId, findNextFollowingId, findNextTopLevelId, listPlacableParents, collectZkEntries } from "./zkData";
 import { PlaceChildModal } from "./placeChildModal";
 import { ConfirmationModal } from "./confirmationModal";
@@ -13,7 +12,7 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 		name: "Place this note at the end of the Zettelkasten",
 		checkCallback: (checking) => {
 			const file = plugin.app.workspace.getActiveFile();
-			if (!file || file.extension !== "md" || file.path === DEBUG_NOTE_PATH) {
+			if (!file || file.extension !== "md") {
 				return false;
 			}
 
@@ -30,7 +29,7 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 		name: "Place note as child of...",
 		checkCallback: (checking) => {
 			const file = plugin.app.workspace.getActiveFile();
-			if (!file || file.extension !== "md" || file.path === DEBUG_NOTE_PATH) {
+			if (!file || file.extension !== "md") {
 				return false;
 			}
 
@@ -47,7 +46,7 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 		name: "Create Child",
 		checkCallback: (checking) => {
 			const file = plugin.app.workspace.getActiveFile();
-			if (!file || file.extension !== "md" || file.path === DEBUG_NOTE_PATH) {
+			if (!file || file.extension !== "md") {
 				return false;
 			}
 
@@ -64,7 +63,7 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 		name: "Create Following Note",
 		checkCallback: (checking) => {
 			const file = plugin.app.workspace.getActiveFile();
-			if (!file || file.extension !== "md" || file.path === DEBUG_NOTE_PATH) {
+			if (!file || file.extension !== "md") {
 				return false;
 			}
 
@@ -80,7 +79,7 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 		id: "add-navigation-links",
 		name: "Add id-based links to all notes",
 		checkCallback: (checking) => {
-			const hasZkNotes = collectZkEntries(plugin.app, DEBUG_NOTE_PATH).length > 0;
+			const hasZkNotes = collectZkEntries(plugin.app).length > 0;
 
 			if (!checking && hasZkNotes) {
 				void addNavigationLinksToAllNotes(plugin);
@@ -100,7 +99,7 @@ async function placeCurrentNoteAtEnd(plugin: AngryLuhmannPlugin, file: TFile) {
 		return;
 	}
 
-	const nextId = findNextTopLevelId(plugin.app, DEBUG_NOTE_PATH);
+	const nextId = findNextTopLevelId(plugin.app);
 	const idValue = String(nextId);
 
 	await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
@@ -120,9 +119,9 @@ async function placeNoteAsChild(plugin: AngryLuhmannPlugin, file: TFile) {
 		return;
 	}
 
-	const parents = listPlacableParents(plugin.app, DEBUG_NOTE_PATH);
+	const parents = listPlacableParents(plugin.app);
 	const modal = new PlaceChildModal(plugin.app, parents, async (parent) => {
-		const nextId = findNextChildId(parent.id, plugin.app, DEBUG_NOTE_PATH);
+		const nextId = findNextChildId(parent.id, plugin.app);
 		await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
 			frontmatter["zk-id"] = String(nextId);
 		});
@@ -143,7 +142,7 @@ async function createChildNote(plugin: AngryLuhmannPlugin, file: TFile) {
 	}
 
 	const parentIdStr = String(parentId);
-	const childId = findNextChildId(parentIdStr, plugin.app, DEBUG_NOTE_PATH);
+	const childId = findNextChildId(parentIdStr, plugin.app);
 
 	const parentFolder = plugin.app.fileManager.getNewFileParent(file.path);
 	const baseName = `Child of ${file.basename}`.trim();
@@ -181,7 +180,7 @@ async function createFollowingNote(plugin: AngryLuhmannPlugin, file: TFile) {
 	}
 
 	const currentIdStr = String(currentId).trim();
-	const nextId = findNextFollowingId(currentIdStr, plugin.app, DEBUG_NOTE_PATH);
+	const nextId = findNextFollowingId(currentIdStr, plugin.app);
 
 	if (!nextId) {
 		new Notice("Cannot determine next position");
@@ -200,9 +199,8 @@ async function createFollowingNote(plugin: AngryLuhmannPlugin, file: TFile) {
 }
 
 async function addNavigationLinksToAllNotes(plugin: AngryLuhmannPlugin) {
-	const entries = collectZkEntries(plugin.app, DEBUG_NOTE_PATH);
-	// Suppress warnings during navigation link generation
-	const tree = buildZkTree(entries, () => {});
+	const entries = collectZkEntries(plugin.app);
+	const tree = buildZkTree(entries);
 	const filesInOrder = getDepthFirstOrder(tree);
 
 	const message =

@@ -22,7 +22,7 @@ export interface RenderedZkLine {
 
 export const ZK_ID_PATTERN = /^\d+(?:\.\d+)*$/;
 
-export function buildZkTree(entries: ZkEntry[], warn: (message: string) => void): ZkNode[] {
+export function buildZkTree(entries: ZkEntry[], warn?: (message: string) => void): ZkNode[] {
 	const uniqueEntries = dedupeAndValidate(entries, warn);
 	const sortedEntries = [...uniqueEntries].sort((a, b) => depthOf(a) - depthOf(b));
 
@@ -34,7 +34,7 @@ export function buildZkTree(entries: ZkEntry[], warn: (message: string) => void)
 		const partNumber = Number(parts[parts.length - 1]);
 
 		if (Number.isNaN(partNumber)) {
-			warn(`Invalid zk-id "${entry.id}" in ${entry.file.name}`);
+			warn?.(`Invalid zk-id "${entry.id}" in ${entry.file.name}`);
 			continue;
 		}
 
@@ -52,7 +52,7 @@ export function buildZkTree(entries: ZkEntry[], warn: (message: string) => void)
 			const parent = nodeMap.get(parentId);
 
 			if (!parent) {
-				warn(`Missing parent "${parentId}" for zk-id "${entry.id}" in ${entry.file.name}`);
+				warn?.(`Missing parent "${parentId}" for zk-id "${entry.id}" in ${entry.file.name}`);
 				continue;
 			}
 
@@ -104,7 +104,7 @@ function renderNode(node: ZkNode, ancestors: boolean[], isLast: boolean, lines: 
 	}
 }
 
-function dedupeAndValidate(entries: ZkEntry[], warn: (message: string) => void): ZkEntry[] {
+function dedupeAndValidate(entries: ZkEntry[], warn?: (message: string) => void): ZkEntry[] {
 	const valid: ZkEntry[] = [];
 	const seen = new Map<string, string>();
 
@@ -116,12 +116,12 @@ function dedupeAndValidate(entries: ZkEntry[], warn: (message: string) => void):
 		}
 
 		if (!ZK_ID_PATTERN.test(rawId)) {
-			warn(`Invalid zk-id "${rawId}" in ${entry.file.name}`);
+			warn?.(`Invalid zk-id "${rawId}" in ${entry.file.name}`);
 			continue;
 		}
 
 		if (seen.has(rawId)) {
-			warn(`Duplicate zk-id "${rawId}" found in ${entry.file.name}`);
+			warn?.(`Duplicate zk-id "${rawId}" found in ${entry.file.name}`);
 			continue;
 		}
 

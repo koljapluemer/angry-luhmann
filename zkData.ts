@@ -1,15 +1,10 @@
 import { App } from "obsidian";
-import { DEBUG_NOTE_PATH } from "./constants";
 import { ZK_ID_PATTERN, ZkEntry } from "./zkTree";
 
-export function collectZkEntries(app: App, ignorePath: string = DEBUG_NOTE_PATH): ZkEntry[] {
+export function collectZkEntries(app: App): ZkEntry[] {
 	const entries: ZkEntry[] = [];
 
 	for (const file of app.vault.getMarkdownFiles()) {
-		if (file.path === ignorePath) {
-			continue;
-		}
-
 		const cache = app.metadataCache.getFileCache(file);
 		const zkId = cache?.frontmatter?.["zk-id"];
 
@@ -21,14 +16,10 @@ export function collectZkEntries(app: App, ignorePath: string = DEBUG_NOTE_PATH)
 	return entries;
 }
 
-export function findNextTopLevelId(app: App, ignorePath: string = DEBUG_NOTE_PATH): number {
+export function findNextTopLevelId(app: App): number {
 	let maxId = -1;
 
 	for (const file of app.vault.getMarkdownFiles()) {
-		if (file.path === ignorePath) {
-			continue;
-		}
-
 		const cache = app.metadataCache.getFileCache(file);
 		const zkId = cache?.frontmatter?.["zk-id"];
 
@@ -52,15 +43,15 @@ export function findNextTopLevelId(app: App, ignorePath: string = DEBUG_NOTE_PAT
 	return maxId + 1;
 }
 
-export function listPlacableParents(app: App, ignorePath: string = DEBUG_NOTE_PATH): ZkEntry[] {
-	return collectZkEntries(app, ignorePath);
+export function listPlacableParents(app: App): ZkEntry[] {
+	return collectZkEntries(app);
 }
 
-export function findNextChildId(parentId: string, app: App, ignorePath: string = DEBUG_NOTE_PATH): string {
+export function findNextChildId(parentId: string, app: App): string {
 	const depth = parentId.split(".").length + 1;
 	let maxChild = -1;
 
-	for (const entry of collectZkEntries(app, ignorePath)) {
+	for (const entry of collectZkEntries(app)) {
 		if (!entry.id.startsWith(`${parentId}.`)) {
 			continue;
 		}
@@ -79,12 +70,12 @@ export function findNextChildId(parentId: string, app: App, ignorePath: string =
 	return `${parentId}.${maxChild + 1}`;
 }
 
-export function findNextFollowingId(currentId: string, app: App, ignorePath: string = DEBUG_NOTE_PATH): string | null {
+export function findNextFollowingId(currentId: string, app: App): string | null {
 	if (!ZK_ID_PATTERN.test(currentId)) {
 		return null;
 	}
 
-	const entries = collectZkEntries(app, ignorePath);
+	const entries = collectZkEntries(app);
 	const used = new Set(entries.map((e) => e.id.trim()));
 	const parts = currentId.split(".");
 	const parentParts = parts.slice(0, -1);
