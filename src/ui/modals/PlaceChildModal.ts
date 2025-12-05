@@ -1,5 +1,5 @@
 import { App, SuggestModal } from "obsidian";
-import { ZkEntry } from "./zkTree";
+import { ZkEntry } from "../../core/types";
 
 interface ParentSuggestion {
 	display: string;

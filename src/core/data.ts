@@ -1,5 +1,5 @@
 import { App } from "obsidian";
-import { ZK_ID_PATTERN, ZkEntry } from "./zkTree";
+import { ZK_ID_PATTERN, ZkEntry } from "./types";
 
 export function collectZkEntries(app: App): ZkEntry[] {
 	const entries: ZkEntry[] = [];

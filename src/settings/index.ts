@@ -1,5 +1,5 @@
 import { App, PluginSettingTab } from "obsidian";
-import type AngryLuhmannPlugin from "./main";
+import type AngryLuhmannPlugin from "../plugin";
 
 export interface AngryLuhmannSettings {
 }

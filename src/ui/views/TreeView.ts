@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
-import { EMPTY_STATE_TEXT, VIEW_TYPE_ZK_TREE } from "./constants";
-import { RenderedZkLine } from "./zkTree";
+import { EMPTY_STATE_TEXT, VIEW_TYPE_ZK_TREE } from "../../utils/constants";
+import { RenderedZkLine } from "../../core/types";
 
 export class ZkTreeView extends ItemView {
 	private treeLines: RenderedZkLine[] = [];

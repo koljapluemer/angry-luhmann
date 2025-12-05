@@ -1,26 +1,5 @@
 import { TFile } from "obsidian";
-
-export interface ZkEntry {
-	id: string;
-	file: TFile;
-}
-
-export interface ZkNode {
-	id: string;
-	part: number;
-	file: TFile;
-	children: ZkNode[];
-}
-
-export interface RenderedZkLine {
-	prefix: string;
-	name: string;
-	file: TFile;
-	depth: number;
-	hasChildren: boolean;
-}
-
-export const ZK_ID_PATTERN = /^\d+(?:\.\d+)*$/;
+import { ZkEntry, ZkNode, RenderedZkLine, ZK_ID_PATTERN } from "./types";
 
 export function buildZkTree(entries: ZkEntry[], warn?: (message: string) => void): ZkNode[] {
 	const uniqueEntries = dedupeAndValidate(entries, warn);
@@ -77,6 +56,25 @@ export function renderZkTree(nodes: ZkNode[]): RenderedZkLine[] {
 	}
 
 	return lines;
+}
+
+export function getDepthFirstOrder(roots: ZkNode[]): TFile[] {
+	const result: TFile[] = [];
+	const sortedRoots = sortNodes(roots);
+
+	function traverse(node: ZkNode) {
+		result.push(node.file);
+		const sortedChildren = sortNodes(node.children);
+		for (const child of sortedChildren) {
+			traverse(child);
+		}
+	}
+
+	for (const root of sortedRoots) {
+		traverse(root);
+	}
+
+	return result;
 }
 
 function renderNode(node: ZkNode, ancestors: boolean[], isLast: boolean, lines: RenderedZkLine[]) {
@@ -143,23 +141,4 @@ function sortChildren(nodes: ZkNode[]) {
 
 function sortNodes(nodes: ZkNode[]) {
 	return [...nodes].sort((a, b) => a.part - b.part);
-}
-
-export function getDepthFirstOrder(roots: ZkNode[]): TFile[] {
-	const result: TFile[] = [];
-	const sortedRoots = sortNodes(roots);
-
-	function traverse(node: ZkNode) {
-		result.push(node.file);
-		const sortedChildren = sortNodes(node.children);
-		for (const child of sortedChildren) {
-			traverse(child);
-		}
-	}
-
-	for (const root of sortedRoots) {
-		traverse(root);
-	}
-
-	return result;
 }
