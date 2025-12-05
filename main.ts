@@ -32,7 +32,7 @@ export default class AngryLuhmannPlugin extends Plugin {
 
 	onunload() {
 		this.clearRefreshTimer();
-		this.app.workspace.detachLeavesOfType(VIEW_TYPE_ZK_TREE);
+		// Don't detach leaves - they will be reinitialized at original position on plugin update
 	}
 
 	private initLeaf() {

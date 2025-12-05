@@ -201,7 +201,8 @@ async function createFollowingNote(plugin: AngryLuhmannPlugin, file: TFile) {
 
 async function addNavigationLinksToAllNotes(plugin: AngryLuhmannPlugin) {
 	const entries = collectZkEntries(plugin.app, DEBUG_NOTE_PATH);
-	const tree = buildZkTree(entries, (msg) => console.warn(msg));
+	// Suppress warnings during navigation link generation
+	const tree = buildZkTree(entries, () => {});
 	const filesInOrder = getDepthFirstOrder(tree);
 
 	const message =
@@ -227,12 +228,12 @@ async function processNavigationLinks(plugin: AngryLuhmannPlugin, filesInOrder: 
 		const nextFile = i < filesInOrder.length - 1 ? filesInOrder[i + 1] : null;
 
 		try {
-			const content = await plugin.app.vault.read(file);
-			const cleanedContent = removeNavigationLinks(content);
-			const navLink = generateNavigationLink(prevFile, nextFile);
-			const newContent = cleanedContent + navLink;
-
-			await plugin.app.vault.modify(file, newContent);
+			// Use Vault.process() instead of vault.modify() for atomic operations
+			await plugin.app.vault.process(file, (content) => {
+				const cleanedContent = removeNavigationLinks(content);
+				const navLink = generateNavigationLink(prevFile, nextFile);
+				return cleanedContent + navLink;
+			});
 			successCount++;
 		} catch (error) {
 			errorCount++;
