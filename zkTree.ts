@@ -16,6 +16,8 @@ export interface RenderedZkLine {
 	prefix: string;
 	name: string;
 	file: TFile;
+	depth: number;
+	hasChildren: boolean;
 }
 
 export const ZK_ID_PATTERN = /^\d+(?:\.\d+)*$/;
@@ -81,7 +83,16 @@ function renderNode(node: ZkNode, ancestors: boolean[], isLast: boolean, lines: 
 	const prefixParts = ancestors.slice(0, -1).map((_, i) => (ancestors[i + 1] ? "    " : "│   "));
 	const connector = ancestors.length ? (isLast ? "└──" : "├──") : "";
 	const prefix = `${prefixParts.join("")}${connector}`;
-	lines.push({ prefix, name: node.file.basename, file: node.file });
+	const depth = ancestors.length;
+	const hasChildren = node.children.length > 0;
+
+	lines.push({
+		prefix,
+		name: node.file.basename,
+		file: node.file,
+		depth,
+		hasChildren
+	});
 
 	const nextAncestors = [...ancestors, isLast];
 	const children = sortNodes(node.children);

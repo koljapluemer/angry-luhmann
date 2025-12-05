@@ -22,13 +22,8 @@
 	background: var(--interactive-hover);
 }
 
+/* Rely on Obsidian's built-in tree styles - just ensure container is clean */
 .zk-tree-pane .zk-tree {
-	font-family: var(--font-monospace);
-	white-space: pre;
 	margin: 0;
-	line-height: 1;
-}
-
-.zk-line {
-	padding: 2px 0;
+	padding: 0;
 }

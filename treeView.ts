@@ -7,6 +7,7 @@ export class ZkTreeView extends ItemView {
 	private emptyState = EMPTY_STATE_TEXT;
 	private treeEl: HTMLElement | null = null;
 	private refreshHandler: (() => Promise<void>) | null;
+	private collapsedPaths = new Set<string>();
 
 	constructor(leaf: WorkspaceLeaf, refreshHandler: () => Promise<void>) {
 		super(leaf);
@@ -62,14 +63,111 @@ export class ZkTreeView extends ItemView {
 			return;
 		}
 
-		for (const line of this.treeLines) {
-			const lineEl = this.treeEl.createDiv({ cls: "zk-line" });
-			lineEl.createSpan({ text: line.prefix, cls: "zk-prefix" });
-			const link = lineEl.createEl("a", { text: line.name, cls: "zk-link" });
-			link.addEventListener("click", (evt) => {
-				evt.preventDefault();
-				this.app.workspace.openLinkText(line.file.path, "", false);
+		const activeFile = this.app.workspace.getActiveFile();
+
+		let i = 0;
+		while (i < this.treeLines.length) {
+			const line = this.treeLines[i];
+			i = this.renderItem(line, i, activeFile, this.treeEl);
+		}
+	}
+
+	private renderItem(
+		line: RenderedZkLine,
+		startIndex: number,
+		activeFile: any,
+		container: HTMLElement
+	): number {
+		const isActive = activeFile?.path === line.file.path;
+		const isCollapsed = this.collapsedPaths.has(line.file.path);
+		const treeItem = container.createDiv({ cls: "tree-item nav-file" });
+
+		// Obsidian's indentation formula:
+		// margin-inline-start: depth * -17px
+		// padding-inline-start: 24px + (depth * 17px)
+		const marginInlineStart = line.depth * -17;
+		const paddingInlineStart = 24 + (line.depth * 17);
+
+		// Create the item itself
+		const treeItemSelf = treeItem.createDiv({
+			cls: `tree-item-self nav-file-title is-clickable ${isActive ? "is-active" : ""} ${
+				line.hasChildren ? "mod-collapsible" : ""
+			}`,
+			attr: {
+				"data-path": line.file.path,
+				style: `margin-inline-start: ${marginInlineStart}px !important; padding-inline-start: ${paddingInlineStart}px !important;`
+			}
+		});
+
+		// Add collapse icon if has children
+		if (line.hasChildren) {
+			const collapseIcon = treeItemSelf.createDiv({
+				cls: `tree-item-icon collapse-icon ${isCollapsed ? "is-collapsed" : ""}`
+			});
+			collapseIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon right-triangle"><path d="M3 8L12 17L21 8"></path></svg>`;
+
+			collapseIcon.addEventListener("click", (evt) => {
+				evt.stopPropagation();
+				this.toggleCollapse(line.file.path);
 			});
 		}
+
+		// Add file name
+		const treeItemInner = treeItemSelf.createDiv({
+			cls: "tree-item-inner nav-file-title-content",
+			text: line.name
+		});
+
+		// Click to open file
+		treeItemSelf.addEventListener("click", (evt) => {
+			evt.preventDefault();
+			this.app.workspace.openLinkText(line.file.path, "", false);
+		});
+
+		// Handle children
+		let nextIndex = startIndex + 1;
+		if (line.hasChildren && !isCollapsed) {
+			const childrenContainer = treeItem.createDiv({ cls: "tree-item-children" });
+
+			// Render children until we hit a sibling or parent
+			while (
+				nextIndex < this.treeLines.length &&
+				this.treeLines[nextIndex].depth > line.depth
+			) {
+				const childLine = this.treeLines[nextIndex];
+				if (childLine.depth === line.depth + 1) {
+					// Direct child
+					nextIndex = this.renderItem(
+						childLine,
+						nextIndex,
+						activeFile,
+						childrenContainer
+					);
+				} else {
+					// Skip descendants (will be rendered by their parent)
+					nextIndex++;
+				}
+			}
+		} else if (line.hasChildren && isCollapsed) {
+			// Skip all descendants
+			const targetDepth = line.depth;
+			while (
+				nextIndex < this.treeLines.length &&
+				this.treeLines[nextIndex].depth > targetDepth
+			) {
+				nextIndex++;
+			}
+		}
+
+		return nextIndex;
+	}
+
+	private toggleCollapse(path: string) {
+		if (this.collapsedPaths.has(path)) {
+			this.collapsedPaths.delete(path);
+		} else {
+			this.collapsedPaths.add(path);
+		}
+		this.renderTree();
 	}
 }
