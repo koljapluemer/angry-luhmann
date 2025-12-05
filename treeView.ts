@@ -6,12 +6,10 @@ export class ZkTreeView extends ItemView {
 	private treeLines: RenderedZkLine[] = [];
 	private emptyState = EMPTY_STATE_TEXT;
 	private treeEl: HTMLElement | null = null;
-	private refreshHandler: (() => Promise<void>) | null;
 	private collapsedPaths = new Set<string>();
 
-	constructor(leaf: WorkspaceLeaf, refreshHandler: () => Promise<void>) {
+	constructor(leaf: WorkspaceLeaf) {
 		super(leaf);
-		this.refreshHandler = refreshHandler;
 	}
 
 	getViewType(): string {
@@ -36,16 +34,15 @@ export class ZkTreeView extends ItemView {
 		this.contentEl.empty();
 		this.contentEl.addClass("zk-tree-pane");
 
-		const toolbar = this.contentEl.createDiv({ cls: "zk-tree-toolbar" });
-		const refreshButton = toolbar.createEl("button", { text: "Refresh" });
-		refreshButton.addEventListener("click", () => {
-			if (this.refreshHandler) {
-				void this.refreshHandler();
-			}
-		});
-
 		this.treeEl = this.contentEl.createDiv({ cls: "zk-tree" });
 		this.renderTree();
+
+		// Re-render when active file changes
+		this.registerEvent(
+			this.app.workspace.on("active-leaf-change", () => {
+				this.renderTree();
+			})
+		);
 	}
 
 	async onClose() {
@@ -119,9 +116,11 @@ export class ZkTreeView extends ItemView {
 		});
 
 		// Click to open file
-		treeItemSelf.addEventListener("click", (evt) => {
-			evt.preventDefault();
-			this.app.workspace.openLinkText(line.file.path, "", false);
+		treeItemSelf.addEventListener("click", async (evt) => {
+			const file = this.app.vault.getAbstractFileByPath(line.file.path);
+			if (file) {
+				await this.app.workspace.getLeaf(false).openFile(file as any);
+			}
 		});
 
 		// Handle children

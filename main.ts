@@ -14,7 +14,7 @@ export default class AngryLuhmannPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.registerView(VIEW_TYPE_ZK_TREE, (leaf) => new ZkTreeView(leaf, () => this.refreshTree()));
+		this.registerView(VIEW_TYPE_ZK_TREE, (leaf) => new ZkTreeView(leaf));
 
 		this.registerEvent(this.app.vault.on("create", (file) => this.onFileChange(file)));
 		this.registerEvent(this.app.vault.on("modify", (file) => this.onFileChange(file)));
