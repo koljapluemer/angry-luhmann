@@ -37,12 +37,30 @@ export class ZkTreeView extends ItemView {
 		this.treeEl = this.contentEl.createDiv({ cls: "zk-tree" });
 		this.renderTree();
 
-		// Re-render when active file changes
+		// Update active file highlighting when active file changes
 		this.registerEvent(
 			this.app.workspace.on("active-leaf-change", () => {
-				this.renderTree();
+				this.updateActiveFile();
 			})
 		);
+	}
+
+	private updateActiveFile() {
+		if (!this.treeEl) {
+			return;
+		}
+
+		const activeFile = this.app.workspace.getActiveFile();
+		const allItems = this.treeEl.querySelectorAll('.tree-item-self');
+
+		allItems.forEach((item) => {
+			const path = item.getAttribute('data-path');
+			if (path === activeFile?.path) {
+				item.addClass('is-active');
+			} else {
+				item.removeClass('is-active');
+			}
+		});
 	}
 
 	async onClose() {
