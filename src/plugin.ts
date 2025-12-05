@@ -1,4 +1,4 @@
-import { App, Plugin, TAbstractFile, TFile } from "obsidian";
+import { App, Notice, Plugin, TAbstractFile, TFile } from "obsidian";
 import { registerCommands } from "./commands";
 import { EMPTY_STATE_TEXT, VIEW_TYPE_ZK_TREE } from "./utils/constants";
 import { AngryLuhmannSettingTab, AngryLuhmannSettings, DEFAULT_SETTINGS } from "./settings";
@@ -6,9 +6,11 @@ import { ZkTreeView } from "./ui/views/TreeView";
 import { collectZkEntries } from "./core/data";
 import { RenderedZkLine, ZkEntry } from "./core/types";
 import { buildZkTree, renderZkTree } from "./core/tree";
+import { generateMarkdownTree } from "./core/overview";
 
 export default class AngryLuhmannPlugin extends Plugin {
 	private refreshTimer: number | null = null;
+	private overviewUpdateTimer: number | null = null;
 	private isRefreshing = false;
 	settings: AngryLuhmannSettings;
 
@@ -28,11 +30,17 @@ export default class AngryLuhmannPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(() => {
 			this.initLeaf();
 			this.scheduleRefresh();
+
+			// Initial overview note update if path is set
+			if (this.settings.overviewNotePath.trim()) {
+				void this.updateOverviewNote();
+			}
 		});
 	}
 
 	onunload() {
 		this.clearRefreshTimer();
+		this.clearOverviewUpdateTimer();
 		// Don't detach leaves - they will be reinitialized at original position on plugin update
 	}
 
@@ -99,6 +107,11 @@ export default class AngryLuhmannPlugin extends Plugin {
 		} finally {
 			this.isRefreshing = false;
 		}
+
+		// Schedule overview note update if auto-update is enabled
+		if (this.settings.autoUpdateOverview) {
+			this.scheduleOverviewUpdate();
+		}
 	}
 
 	async loadSettings() {
@@ -107,5 +120,58 @@ export default class AngryLuhmannPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	async updateOverviewNote() {
+		// Guard: if path is empty, do nothing
+		if (!this.settings.overviewNotePath.trim()) {
+			return;
+		}
+
+		// Collect entries and render tree
+		const entries = collectZkEntries(this.app);
+		const tree = buildZkTree(entries);
+		const lines = renderZkTree(tree);
+
+		// Generate markdown content
+		const markdown = generateMarkdownTree(lines);
+
+		// Write to file (create if doesn't exist, overwrite if exists)
+		const path = this.settings.overviewNotePath.trim();
+		const file = this.app.vault.getAbstractFileByPath(path);
+
+		if (file instanceof TFile) {
+			await this.app.vault.modify(file, markdown);
+		} else if (!file) {
+			await this.app.vault.create(path, markdown);
+		} else {
+			// Path exists but is not a file (folder)
+			new Notice(`Cannot write overview: "${path}" is a folder`);
+		}
+	}
+
+	private scheduleOverviewUpdate() {
+		// Only schedule if auto-update is enabled
+		if (!this.settings.autoUpdateOverview) {
+			return;
+		}
+
+		// Debounce: clear existing timer
+		if (this.overviewUpdateTimer !== null) {
+			window.clearTimeout(this.overviewUpdateTimer);
+		}
+
+		// Wait 2 seconds after changes settle
+		this.overviewUpdateTimer = window.setTimeout(() => {
+			this.overviewUpdateTimer = null;
+			void this.updateOverviewNote();
+		}, 2000);
+	}
+
+	private clearOverviewUpdateTimer() {
+		if (this.overviewUpdateTimer !== null) {
+			window.clearTimeout(this.overviewUpdateTimer);
+			this.overviewUpdateTimer = null;
+		}
 	}
 }

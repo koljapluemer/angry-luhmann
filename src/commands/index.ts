@@ -88,4 +88,18 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 			return hasZkNotes;
 		},
 	});
+
+	plugin.addCommand({
+		id: "refresh-overview-note",
+		name: "Refresh ZK Overview note",
+		checkCallback: (checking) => {
+			const hasPath = plugin.settings.overviewNotePath.trim().length > 0;
+
+			if (!checking && hasPath) {
+				void plugin.updateOverviewNote();
+			}
+
+			return hasPath;
+		},
+	});
 }
