@@ -51,14 +51,107 @@ export class ZkTreeView extends ItemView {
 		}
 
 		const activeFile = this.app.workspace.getActiveFile();
-		const allItems = this.treeEl.querySelectorAll('.tree-item-self');
+		if (!activeFile) {
+			return;
+		}
 
-		allItems.forEach((item) => {
-			const path = item.getAttribute('data-path');
-			if (path === activeFile?.path) {
-				item.addClass('is-active');
-			} else {
-				item.removeClass('is-active');
+		// Step 1: Auto-expand parent nodes if needed
+		const needsRerender = this.expandParentsForFile(activeFile.path);
+
+		if (needsRerender) {
+			// Parents were collapsed, need full re-render
+			this.renderTree();
+		} else {
+			// Just update CSS classes (more efficient)
+			const allItems = this.treeEl.querySelectorAll('.tree-item-self');
+			allItems.forEach((item) => {
+				const path = item.getAttribute('data-path');
+				if (path === activeFile.path) {
+					item.addClass('is-active');
+				} else {
+					item.removeClass('is-active');
+				}
+			});
+		}
+
+		// Step 2: Scroll to the active element
+		this.scrollToActiveFile();
+	}
+
+	private getZkId(filePath: string): string | null {
+		const file = this.app.vault.getAbstractFileByPath(filePath);
+		if (!file) {
+			return null;
+		}
+
+		const cache = this.app.metadataCache.getFileCache(file as any);
+		const zkId = cache?.frontmatter?.["zk-id"];
+
+		if (typeof zkId === "string" || typeof zkId === "number") {
+			return String(zkId).trim();
+		}
+
+		return null;
+	}
+
+	private getParentZkIds(zkId: string): string[] {
+		const parts = zkId.split(".");
+		const parents: string[] = [];
+
+		// Build parent chain: "1.2.3" -> ["1", "1.2"]
+		for (let i = 1; i < parts.length; i++) {
+			parents.push(parts.slice(0, i).join("."));
+		}
+
+		return parents;
+	}
+
+	private getFilePathByZkId(zkId: string): string | null {
+		// Search through treeLines for matching zk-id
+		for (const line of this.treeLines) {
+			const lineZkId = this.getZkId(line.file.path);
+			if (lineZkId === zkId) {
+				return line.file.path;
+			}
+		}
+		return null;
+	}
+
+	private expandParentsForFile(filePath: string): boolean {
+		const zkId = this.getZkId(filePath);
+		if (!zkId) {
+			return false;
+		}
+
+		const parentZkIds = this.getParentZkIds(zkId);
+		let needsRerender = false;
+
+		// For each parent zk-id, find its file path and ensure it's not collapsed
+		for (const parentZkId of parentZkIds) {
+			const parentPath = this.getFilePathByZkId(parentZkId);
+			if (parentPath && this.collapsedPaths.has(parentPath)) {
+				this.collapsedPaths.delete(parentPath);
+				needsRerender = true;
+			}
+		}
+
+		return needsRerender;
+	}
+
+	private scrollToActiveFile() {
+		if (!this.treeEl) {
+			return;
+		}
+
+		// Use requestAnimationFrame to ensure DOM is fully rendered
+		requestAnimationFrame(() => {
+			const activeElement = this.treeEl?.querySelector('.tree-item-self.is-active');
+			if (activeElement) {
+				activeElement.scrollIntoView({
+					behavior: 'smooth',
+					block: 'nearest',
+					inline: 'nearest'
+				});
 			}
 		});
 	}
