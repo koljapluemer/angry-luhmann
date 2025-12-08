@@ -5,6 +5,9 @@ import { placeNoteAsChild } from "./placeNoteAsChild";
 import { createChildNote } from "./createChildNote";
 import { createFollowingNote } from "./createFollowingNote";
 import { addNavigationLinksToAllNotes } from "./addNavigationLinks";
+import { openRandomZkNote } from "./randomZkNote";
+import { removeFromZk } from "./removeFromZk";
+import { markOutsideZk } from "./markOutsideZk";
 
 export function registerCommands(plugin: AngryLuhmannPlugin) {
 	plugin.addCommand({
@@ -100,6 +103,50 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 			}
 
 			return hasPath;
+		},
+	});
+
+	plugin.addCommand({
+		id: "open-random-zk-note",
+		name: "Open random Zettelkasten note",
+		callback: () => void openRandomZkNote(plugin),
+	});
+
+	plugin.addCommand({
+		id: "remove-from-zk",
+		name: "Remove note from Zettelkasten",
+		checkCallback: (checking) => {
+			const file = plugin.app.workspace.getActiveFile();
+			if (!file) {
+				return false;
+			}
+
+			const cache = plugin.app.metadataCache.getFileCache(file);
+			const zkId = cache?.frontmatter?.["zk-id"];
+			const hasZkId = zkId !== undefined && String(zkId) !== "-1";
+
+			if (!checking && hasZkId) {
+				void removeFromZk(plugin, file);
+			}
+
+			return hasZkId;
+		},
+	});
+
+	plugin.addCommand({
+		id: "mark-outside-zk",
+		name: "Mark note as outside Zettelkasten",
+		checkCallback: (checking) => {
+			const file = plugin.app.workspace.getActiveFile();
+			if (!file || file.extension !== "md") {
+				return false;
+			}
+
+			if (!checking) {
+				void markOutsideZk(plugin, file);
+			}
+
+			return true;
 		},
 	});
 }

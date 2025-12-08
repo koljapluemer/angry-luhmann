@@ -9,7 +9,14 @@ export function collectZkEntries(app: App): ZkEntry[] {
 		const zkId = cache?.frontmatter?.["zk-id"];
 
 		if (typeof zkId === "string" || typeof zkId === "number") {
-			entries.push({ id: String(zkId), file });
+			const idStr = String(zkId);
+
+			// Skip entries marked as outside ZK (zk-id: -1)
+			if (idStr === "-1") {
+				continue;
+			}
+
+			entries.push({ id: idStr, file });
 		}
 	}
 

@@ -3,3 +3,51 @@
 	margin: 0;
 	padding: 0;
 }
+
+/* Fixed bottom toolbar for notes */
+.zk-note-toolbar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 40px;
+	background: var(--background-primary);
+	border-top: 1px solid var(--background-modifier-border);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 0 16px;
+	z-index: 10;
+}
+
+.zk-note-toolbar-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background-color 0.1s ease;
+}
+
+.zk-note-toolbar-button:hover {
+	background: var(--background-modifier-hover);
+}
+
+.zk-note-toolbar-button.is-hidden {
+	display: none;
+}
+
+.zk-note-toolbar-button svg.svg-icon {
+	width: 18px;
+	height: 18px;
+	color: var(--icon-color);
+}
+
+/* Add padding to prevent content from being hidden by toolbar */
+.markdown-source-view.mod-cm6 .cm-scroller,
+.markdown-reading-view {
+	padding-bottom: 50px;
+}
