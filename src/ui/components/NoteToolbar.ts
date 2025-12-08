@@ -56,8 +56,15 @@ export class NoteToolbar {
 			return;
 		}
 
-		// Create or update toolbar
-		if (!this.toolbarEl || !this.toolbarEl.isConnected) {
+		// Check if toolbar exists and is in the correct container
+		const needsNewToolbar = !this.toolbarEl ||
+			!this.toolbarEl.isConnected ||
+			this.toolbarEl.parentElement !== container;
+
+		if (needsNewToolbar) {
+			// Remove old toolbar if it exists
+			this.removeToolbar();
+			// Create new toolbar in the correct container
 			this.createToolbar(container);
 		}
 
