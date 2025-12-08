@@ -97,7 +97,7 @@ export default class AngryLuhmannPlugin extends Plugin {
 		}
 
 		this.isRefreshing = true;
-		const entries: ZkEntry[] = collectZkEntries(this.app);
+		const entries: ZkEntry[] = collectZkEntries(this.app, this.settings.excludePatterns);
 
 		try {
 			const tree = buildZkTree(entries);
@@ -136,7 +136,7 @@ export default class AngryLuhmannPlugin extends Plugin {
 		}
 
 		// Collect entries and render tree
-		const entries = collectZkEntries(this.app);
+		const entries = collectZkEntries(this.app, this.settings.excludePatterns);
 		const tree = buildZkTree(entries);
 		const lines = renderZkTree(tree);
 

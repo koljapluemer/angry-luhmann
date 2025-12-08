@@ -4,11 +4,13 @@ import type AngryLuhmannPlugin from "../plugin";
 export interface AngryLuhmannSettings {
 	overviewNotePath: string;
 	autoUpdateOverview: boolean;
+	excludePatterns: string;
 }
 
 export const DEFAULT_SETTINGS: AngryLuhmannSettings = {
 	overviewNotePath: "",
 	autoUpdateOverview: false,
+	excludePatterns: "",
 };
 
 export class AngryLuhmannSettingTab extends PluginSettingTab {
@@ -48,6 +50,20 @@ export class AngryLuhmannSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.autoUpdateOverview = value;
 						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Exclude patterns")
+			.setDesc("Glob patterns (one per line) to exclude notes from Zettelkasten entirely. Examples: Templates/**, Daily/*, **draft*.md")
+			.addTextArea((text) =>
+				text
+					.setPlaceholder("Templates/**\nDaily/*\n**draft*.md")
+					.setValue(this.plugin.settings.excludePatterns)
+					.onChange(async (value) => {
+						this.plugin.settings.excludePatterns = value;
+						await this.plugin.saveSettings();
+						await this.plugin.refreshTree();
 					})
 			);
 	}

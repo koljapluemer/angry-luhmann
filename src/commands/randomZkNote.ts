@@ -3,7 +3,7 @@ import type AngryLuhmannPlugin from "../plugin";
 import { collectZkEntries } from "../core/data";
 
 export async function openRandomZkNote(plugin: AngryLuhmannPlugin) {
-	const entries = collectZkEntries(plugin.app);
+	const entries = collectZkEntries(plugin.app, plugin.settings.excludePatterns);
 
 	if (entries.length === 0) {
 		new Notice("No Zettelkasten notes found");
