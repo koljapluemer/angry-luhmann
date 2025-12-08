@@ -6,6 +6,7 @@ import { createChildNote } from "./createChildNote";
 import { createFollowingNote } from "./createFollowingNote";
 import { addNavigationLinksToAllNotes } from "./addNavigationLinks";
 import { openRandomZkNote } from "./randomZkNote";
+import { openRandomUnplacedNote } from "./randomUnplacedNote";
 import { removeFromZk } from "./removeFromZk";
 import { markOutsideZk } from "./markOutsideZk";
 
@@ -110,6 +111,12 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 		id: "open-random-zk-note",
 		name: "Open random Zettelkasten note",
 		callback: () => void openRandomZkNote(plugin),
+	});
+
+	plugin.addCommand({
+		id: "open-random-unplaced-note",
+		name: "Open random unplaced note",
+		callback: () => void openRandomUnplacedNote(plugin),
 	});
 
 	plugin.addCommand({

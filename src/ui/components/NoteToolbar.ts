@@ -1,13 +1,16 @@
 import { setIcon, TFile } from "obsidian";
 import type AngryLuhmannPlugin from "../../plugin";
 import { openRandomZkNote } from "../../commands/randomZkNote";
+import { openRandomUnplacedNote } from "../../commands/randomUnplacedNote";
 import { removeFromZk } from "../../commands/removeFromZk";
 import { markOutsideZk } from "../../commands/markOutsideZk";
 
 export class NoteToolbar {
 	private plugin: AngryLuhmannPlugin;
 	private toolbarEl: HTMLElement | null = null;
+	private separatorEl: HTMLElement | null = null;
 	private removeButton: HTMLElement | null = null;
+	private outsideButton: HTMLElement | null = null;
 	private currentFile: TFile | null = null;
 
 	constructor(plugin: AngryLuhmannPlugin) {
@@ -89,7 +92,20 @@ export class NoteToolbar {
 			void openRandomZkNote(this.plugin);
 		});
 
-		// Button 2: Remove from ZK (conditionally visible)
+		// Button 2: Random Unplaced Note
+		const randomUnplacedButton = this.toolbarEl.createDiv({
+			cls: "zk-note-toolbar-button",
+			attr: { "aria-label": "Open random unplaced note" },
+		});
+		setIcon(randomUnplacedButton, "help-circle");
+		randomUnplacedButton.addEventListener("click", () => {
+			void openRandomUnplacedNote(this.plugin);
+		});
+
+		// Separator (conditionally visible)
+		this.separatorEl = this.toolbarEl.createDiv({ cls: "zk-note-toolbar-separator" });
+
+		// Button 3: Remove from ZK (conditionally visible)
 		this.removeButton = this.toolbarEl.createDiv({
 			cls: "zk-note-toolbar-button",
 			attr: { "aria-label": "Remove note from Zettelkasten" },
@@ -101,13 +117,13 @@ export class NoteToolbar {
 			}
 		});
 
-		// Button 3: Mark Outside ZK
-		const outsideButton = this.toolbarEl.createDiv({
+		// Button 4: Mark Outside ZK (conditionally visible)
+		this.outsideButton = this.toolbarEl.createDiv({
 			cls: "zk-note-toolbar-button",
 			attr: { "aria-label": "Mark note as outside Zettelkasten" },
 		});
-		setIcon(outsideButton, "ban");
-		outsideButton.addEventListener("click", () => {
+		setIcon(this.outsideButton, "ban");
+		this.outsideButton.addEventListener("click", () => {
 			if (this.currentFile) {
 				void markOutsideZk(this.plugin, this.currentFile);
 			}
@@ -115,14 +131,14 @@ export class NoteToolbar {
 	}
 
 	private updateButtonVisibility(file: TFile) {
-		if (!this.removeButton) {
+		if (!this.removeButton || !this.outsideButton || !this.separatorEl) {
 			return;
 		}
 
 		const cache = this.plugin.app.metadataCache.getFileCache(file);
 		const zkId = cache?.frontmatter?.["zk-id"];
 
-		// Show remove button only if note has a zk-id (and it's not -1)
+		// Show remove button only if note has a valid zk-id (not undefined, not -1)
 		const hasValidZkId = zkId !== undefined && String(zkId) !== "-1";
 
 		if (hasValidZkId) {
@@ -130,13 +146,33 @@ export class NoteToolbar {
 		} else {
 			this.removeButton.addClass("is-hidden");
 		}
+
+		// Show mark-outside button only if note has NO zk-id at all
+		const hasNoZkId = zkId === undefined;
+
+		if (hasNoZkId) {
+			this.outsideButton.removeClass("is-hidden");
+		} else {
+			this.outsideButton.addClass("is-hidden");
+		}
+
+		// Show separator only if at least one button on the right is visible
+		const anyRightButtonVisible = hasValidZkId || hasNoZkId;
+
+		if (anyRightButtonVisible) {
+			this.separatorEl.removeClass("is-hidden");
+		} else {
+			this.separatorEl.addClass("is-hidden");
+		}
 	}
 
 	private removeToolbar() {
 		if (this.toolbarEl) {
 			this.toolbarEl.remove();
 			this.toolbarEl = null;
+			this.separatorEl = null;
 			this.removeButton = null;
+			this.outsideButton = null;
 		}
 		this.currentFile = null;
 	}

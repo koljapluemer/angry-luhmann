@@ -46,6 +46,13 @@
 	color: var(--icon-color);
 }
 
+.zk-note-toolbar-separator {
+	width: 1px;
+	height: 24px;
+	background: var(--background-modifier-border);
+	margin: 0 4px;
+}
+
 /* Add padding to prevent content from being hidden by toolbar */
 .markdown-source-view.mod-cm6 .cm-scroller,
 .markdown-reading-view {
