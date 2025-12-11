@@ -2,6 +2,19 @@
 .zk-tree-pane .zk-tree {
 	margin: 0;
 	padding: 0;
+	overflow-x: auto;
+}
+
+/* Prevent text truncation in tree items */
+.zk-tree-pane .tree-item-self {
+	white-space: nowrap;
+	min-width: max-content;
+}
+
+.zk-tree-pane .tree-item-inner {
+	overflow: visible;
+	text-overflow: unset;
+	white-space: nowrap;
 }
 
 /* Fixed bottom toolbar for notes */
@@ -19,6 +32,7 @@
 	gap: 8px;
 	padding: 0 16px;
 	z-index: 10;
+	overflow-x: hidden;
 }
 
 .zk-note-toolbar-button {
