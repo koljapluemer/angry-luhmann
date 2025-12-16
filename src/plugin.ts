@@ -3,17 +3,17 @@ import { registerCommands } from "./commands";
 import { EMPTY_STATE_TEXT, VIEW_TYPE_ZK_TREE } from "./utils/constants";
 import { AngryLuhmannSettingTab, AngryLuhmannSettings, DEFAULT_SETTINGS } from "./settings";
 import { ZkTreeView } from "./ui/views/TreeView";
-import { NoteToolbar } from "./ui/components/NoteToolbar";
 import { collectZkEntries } from "./core/data";
 import { RenderedZkLine, ZkEntry } from "./core/types";
 import { buildZkTree, renderZkTree } from "./core/tree";
 import { generateMarkdownTree } from "./core/overview";
+import { openRandomZkNote } from "./commands/randomZkNote";
+import { openRandomUnplacedNote } from "./commands/randomUnplacedNote";
 
 export default class AngryLuhmannPlugin extends Plugin {
 	private refreshTimer: number | null = null;
 	private overviewUpdateTimer: number | null = null;
 	private isRefreshing = false;
-	private noteToolbar: NoteToolbar | null = null;
 	settings: AngryLuhmannSettings;
 
 	async onload() {
@@ -29,8 +29,14 @@ export default class AngryLuhmannPlugin extends Plugin {
 		this.addSettingTab(new AngryLuhmannSettingTab(this.app, this));
 		registerCommands(this);
 
-		this.noteToolbar = new NoteToolbar(this);
-		this.noteToolbar.initialize();
+		// Add ribbon icons for quick access
+		this.addRibbonIcon("shuffle", "Open random Zettelkasten note", () => {
+			void openRandomZkNote(this);
+		});
+
+		this.addRibbonIcon("help-circle", "Open random unplaced note", () => {
+			void openRandomUnplacedNote(this);
+		});
 
 		this.app.workspace.onLayoutReady(() => {
 			this.initLeaf();
@@ -46,8 +52,6 @@ export default class AngryLuhmannPlugin extends Plugin {
 	onunload() {
 		this.clearRefreshTimer();
 		this.clearOverviewUpdateTimer();
-		this.noteToolbar?.destroy();
-		this.noteToolbar = null;
 		// Don't detach leaves - they will be reinitialized at original position on plugin update
 	}
 
