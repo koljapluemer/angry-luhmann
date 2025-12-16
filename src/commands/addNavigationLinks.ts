@@ -5,7 +5,7 @@ import { ConfirmationModal } from "../ui/modals/ConfirmationModal";
 import { processNavigationLinks } from "./utils";
 
 export async function addNavigationLinksToAllNotes(plugin: AngryLuhmannPlugin) {
-	const entries = collectZkEntries(plugin.app, plugin.settings.excludePatterns);
+	const entries = collectZkEntries(plugin.app, plugin.settings.excludePatterns, plugin.settings.useIncludeMode);
 	const tree = buildZkTree(entries);
 	const filesInOrder = getDepthFirstOrder(tree);
 

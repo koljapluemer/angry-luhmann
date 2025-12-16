@@ -83,7 +83,7 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 		id: "add-navigation-links",
 		name: "Add id-based links to all notes",
 		checkCallback: (checking) => {
-			const hasZkNotes = collectZkEntries(plugin.app, plugin.settings.excludePatterns).length > 0;
+			const hasZkNotes = collectZkEntries(plugin.app, plugin.settings.excludePatterns, plugin.settings.useIncludeMode).length > 0;
 
 			if (!checking && hasZkNotes) {
 				void addNavigationLinksToAllNotes(plugin);

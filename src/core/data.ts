@@ -1,13 +1,13 @@
 import { App } from "obsidian";
 import { ZK_ID_PATTERN, ZkEntry } from "./types";
-import { isFileExcluded } from "../utils/patterns";
+import { shouldIncludeFile } from "../utils/patterns";
 
-export function collectZkEntries(app: App, excludePatterns = ""): ZkEntry[] {
+export function collectZkEntries(app: App, excludePatterns = "", useIncludeMode = false): ZkEntry[] {
 	const entries: ZkEntry[] = [];
 
 	for (const file of app.vault.getMarkdownFiles()) {
-		// Skip files matching exclude patterns
-		if (isFileExcluded(file, excludePatterns)) {
+		// Skip files based on pattern mode
+		if (!shouldIncludeFile(file, excludePatterns, useIncludeMode)) {
 			continue;
 		}
 

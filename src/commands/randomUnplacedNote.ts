@@ -1,14 +1,14 @@
 import { Notice } from "obsidian";
 import type AngryLuhmannPlugin from "../plugin";
-import { isFileExcluded } from "../utils/patterns";
+import { shouldIncludeFile } from "../utils/patterns";
 
 export async function openRandomUnplacedNote(plugin: AngryLuhmannPlugin) {
 	const unplacedNotes = [];
 
 	// Find all markdown files that don't have a zk-id
 	for (const file of plugin.app.vault.getMarkdownFiles()) {
-		// Skip files matching exclude patterns
-		if (isFileExcluded(file, plugin.settings.excludePatterns)) {
+		// Skip files based on pattern mode
+		if (!shouldIncludeFile(file, plugin.settings.excludePatterns, plugin.settings.useIncludeMode)) {
 			continue;
 		}
 

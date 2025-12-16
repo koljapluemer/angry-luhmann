@@ -5,12 +5,14 @@ export interface AngryLuhmannSettings {
 	overviewNotePath: string;
 	autoUpdateOverview: boolean;
 	excludePatterns: string;
+	useIncludeMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: AngryLuhmannSettings = {
 	overviewNotePath: "",
 	autoUpdateOverview: false,
 	excludePatterns: "",
+	useIncludeMode: false,
 };
 
 export class AngryLuhmannSettingTab extends PluginSettingTab {
@@ -54,11 +56,41 @@ export class AngryLuhmannSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Exclude patterns")
-			.setDesc("Glob patterns (one per line) to exclude notes from Zettelkasten entirely. Examples: Templates/**, Daily/*, **draft*.md")
+			.setName("Use include mode (whitelist)")
+			.setDesc("When enabled, only files matching the patterns below are included. When disabled, matching files are excluded.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.useIncludeMode)
+					.onChange(async (value) => {
+						this.plugin.settings.useIncludeMode = value;
+						await this.plugin.saveSettings();
+						await this.plugin.refreshTree();
+						this.display(); // Re-render to update description
+					})
+			);
+
+		const getDescription = (useIncludeMode: boolean) => {
+			if (useIncludeMode) {
+				return "Glob patterns (one per line) to include notes in Zettelkasten. Only matching notes are included. Examples: Projects/**, Research/*.md";
+			} else {
+				return "Glob patterns (one per line) to exclude notes from Zettelkasten entirely. Examples: Templates/**, Daily/*, **draft*.md";
+			}
+		};
+
+		const getPlaceholder = (useIncludeMode: boolean) => {
+			if (useIncludeMode) {
+				return "Projects/**\nResearch/*.md";
+			} else {
+				return "Templates/**\nDaily/*\n**draft*.md";
+			}
+		};
+
+		new Setting(containerEl)
+			.setName("Filter patterns")
+			.setDesc(getDescription(this.plugin.settings.useIncludeMode))
 			.addTextArea((text) =>
 				text
-					.setPlaceholder("Templates/**\nDaily/*\n**draft*.md")
+					.setPlaceholder(getPlaceholder(this.plugin.settings.useIncludeMode))
 					.setValue(this.plugin.settings.excludePatterns)
 					.onChange(async (value) => {
 						this.plugin.settings.excludePatterns = value;
