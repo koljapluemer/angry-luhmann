@@ -1,9 +1,12 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type AngryLuhmannPlugin from "../plugin";
 
+export type OverviewNoteStyle = "indent" | "bullet";
+
 export interface AngryLuhmannSettings {
 	overviewNotePath: string;
 	autoUpdateOverview: boolean;
+	overviewNoteStyle: OverviewNoteStyle;
 	excludePatterns: string;
 	useIncludeMode: boolean;
 }
@@ -11,6 +14,7 @@ export interface AngryLuhmannSettings {
 export const DEFAULT_SETTINGS: AngryLuhmannSettings = {
 	overviewNotePath: "",
 	autoUpdateOverview: false,
+	overviewNoteStyle: "indent",
 	excludePatterns: "",
 	useIncludeMode: false,
 };
@@ -52,6 +56,23 @@ export class AngryLuhmannSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.autoUpdateOverview = value;
 						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Overview note style")
+			.setDesc("Choose how to format the tree structure in the overview note.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("indent", "Indent")
+					.addOption("bullet", "Bullet points")
+					.setValue(this.plugin.settings.overviewNoteStyle)
+					.onChange(async (value: OverviewNoteStyle) => {
+						this.plugin.settings.overviewNoteStyle = value;
+						await this.plugin.saveSettings();
+						if (this.plugin.settings.overviewNotePath.trim()) {
+							await this.plugin.updateOverviewNote();
+						}
 					})
 			);
 

@@ -145,7 +145,7 @@ export default class AngryLuhmannPlugin extends Plugin {
 		const lines = renderZkTree(tree);
 
 		// Generate markdown content
-		const markdown = generateMarkdownTree(lines);
+		const markdown = generateMarkdownTree(lines, this.settings.overviewNoteStyle);
 
 		// Write to file (create if doesn't exist, overwrite if exists)
 		const path = this.settings.overviewNotePath.trim();
