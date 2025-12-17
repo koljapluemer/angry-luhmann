@@ -152,13 +152,36 @@ export default class AngryLuhmannPlugin extends Plugin {
 		const file = this.app.vault.getAbstractFileByPath(path);
 
 		if (file instanceof TFile) {
-			await this.app.vault.modify(file, markdown);
+			// Read existing content to preserve frontmatter
+			const existingContent = await this.app.vault.read(file);
+			const newContent = this.preserveFrontmatter(existingContent, markdown);
+			await this.app.vault.modify(file, newContent);
 		} else if (!file) {
 			await this.app.vault.create(path, markdown);
 		} else {
 			// Path exists but is not a file (folder)
 			new Notice(`Cannot write overview: "${path}" is a folder`);
 		}
+	}
+
+	private preserveFrontmatter(existingContent: string, newBody: string): string {
+		// Check if content has frontmatter (starts with ---)
+		if (!existingContent.startsWith('---')) {
+			return newBody;
+		}
+
+		// Find the end of frontmatter (second occurrence of ---)
+		const frontmatterEnd = existingContent.indexOf('---', 3);
+		if (frontmatterEnd === -1) {
+			// Malformed frontmatter, just return new body
+			return newBody;
+		}
+
+		// Extract frontmatter including the closing ---
+		const frontmatter = existingContent.substring(0, frontmatterEnd + 3);
+
+		// Combine frontmatter with new body
+		return `${frontmatter}\n\n${newBody}`;
 	}
 
 	private scheduleOverviewUpdate() {
