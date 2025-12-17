@@ -52,13 +52,15 @@ export default class AngryLuhmannPlugin extends Plugin {
 	onunload() {
 		this.clearRefreshTimer();
 		this.clearOverviewUpdateTimer();
-		// Don't detach leaves - they will be reinitialized at original position on plugin update
+
+		// Detach all leaves of this view type
+		this.app.workspace.detachLeavesOfType(VIEW_TYPE_ZK_TREE);
 	}
 
 	private initLeaf() {
 		if (this.app.workspace.getLeavesOfType(VIEW_TYPE_ZK_TREE).length === 0) {
-			const rightLeaf = this.app.workspace.getRightLeaf(false);
-			rightLeaf?.setViewState({ type: VIEW_TYPE_ZK_TREE, active: true });
+			const leftLeaf = this.app.workspace.getLeftLeaf(false);
+			leftLeaf?.setViewState({ type: VIEW_TYPE_ZK_TREE, active: true });
 		}
 	}
 
