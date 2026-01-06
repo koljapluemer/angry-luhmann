@@ -23,7 +23,6 @@ src/
 │   ├── placeNoteAsChild.ts        # Place as child command
 │   ├── createChildNote.ts         # Create child note command
 │   ├── createFollowingNote.ts     # Create following note command
-│   ├── addNavigationLinks.ts      # Bulk add navigation links
 │   └── utils.ts                    # Command utilities (file path generation, link processing)
 ├── utils/
 │   ├── constants.ts      # VIEW_TYPE_ZK_TREE, EMPTY_STATE_TEXT
@@ -48,7 +47,6 @@ main.ts                   # Entry point (imports from src/)
 - `Place note as child of...`: search existing `zk-id` notes and assign the active note the next child id under the selected parent.
 - `Create Child`: creates a new note as the next child of the current `zk-id` note and opens it.
 - `Create Following Note`: creates a new note as the next available sibling of the current `zk-id` note and opens it.
-- `Add id-based links to all notes`: generates navigation links (prev/next) for all zk-id notes in tree order.
 - `Refresh ZK Overview note`: manually updates the overview note (only appears if overview path is configured).
 
 ## Settings

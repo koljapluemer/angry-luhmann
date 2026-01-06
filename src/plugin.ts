@@ -7,8 +7,6 @@ import { collectZkEntries } from "./core/data";
 import { RenderedZkLine, ZkEntry } from "./core/types";
 import { buildZkTree, renderZkTree } from "./core/tree";
 import { generateMarkdownTree } from "./core/overview";
-import { openRandomZkNote } from "./commands/randomZkNote";
-import { openRandomUnplacedNote } from "./commands/randomUnplacedNote";
 
 export default class AngryLuhmannPlugin extends Plugin {
 	private refreshTimer: number | null = null;
@@ -28,15 +26,6 @@ export default class AngryLuhmannPlugin extends Plugin {
 
 		this.addSettingTab(new AngryLuhmannSettingTab(this.app, this));
 		registerCommands(this);
-
-		// Add ribbon icons for quick access
-		this.addRibbonIcon("shuffle", "Open random Zettelkasten note", () => {
-			void openRandomZkNote(this);
-		});
-
-		this.addRibbonIcon("help-circle", "Open random unplaced note", () => {
-			void openRandomUnplacedNote(this);
-		});
 
 		this.app.workspace.onLayoutReady(() => {
 			this.initLeaf();

@@ -4,9 +4,6 @@ import { placeNoteAtEnd } from "./placeNoteAtEnd";
 import { placeNoteAsChild } from "./placeNoteAsChild";
 import { createChildNote } from "./createChildNote";
 import { createFollowingNote } from "./createFollowingNote";
-import { addNavigationLinksToAllNotes } from "./addNavigationLinks";
-import { openRandomZkNote } from "./randomZkNote";
-import { openRandomUnplacedNote } from "./randomUnplacedNote";
 import { removeFromZk } from "./removeFromZk";
 import { markOutsideZk } from "./markOutsideZk";
 
@@ -80,20 +77,6 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 	});
 
 	plugin.addCommand({
-		id: "add-navigation-links",
-		name: "Add id-based links to all notes",
-		checkCallback: (checking) => {
-			const hasZkNotes = collectZkEntries(plugin.app, plugin.settings.excludePatterns, plugin.settings.useIncludeMode).length > 0;
-
-			if (!checking && hasZkNotes) {
-				void addNavigationLinksToAllNotes(plugin);
-			}
-
-			return hasZkNotes;
-		},
-	});
-
-	plugin.addCommand({
 		id: "refresh-overview-note",
 		name: "Refresh ZK Overview note",
 		checkCallback: (checking) => {
@@ -105,18 +88,6 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 
 			return hasPath;
 		},
-	});
-
-	plugin.addCommand({
-		id: "open-random-zk-note",
-		name: "Open random Zettelkasten note",
-		callback: () => void openRandomZkNote(plugin),
-	});
-
-	plugin.addCommand({
-		id: "open-random-unplaced-note",
-		name: "Open random unplaced note",
-		callback: () => void openRandomUnplacedNote(plugin),
 	});
 
 	plugin.addCommand({
