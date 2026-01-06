@@ -1,6 +1,8 @@
 import { Notice, TFile } from "obsidian";
 import type AngryLuhmannPlugin from "../plugin";
 import { findNextTopLevelId } from "../core/data";
+import { VIEW_TYPE_ZK_TREE } from "../utils/constants";
+import { ZkTreeView } from "../ui/views/TreeView";
 
 export async function placeNoteAtEnd(plugin: AngryLuhmannPlugin, file: TFile) {
 	const cache = plugin.app.metadataCache.getFileCache(file);
@@ -20,4 +22,12 @@ export async function placeNoteAtEnd(plugin: AngryLuhmannPlugin, file: TFile) {
 
 	new Notice(`Placed note as ${idValue}`);
 	await plugin.refreshTree();
+
+	// Scroll to the placed note
+	for (const leaf of plugin.app.workspace.getLeavesOfType(VIEW_TYPE_ZK_TREE)) {
+		const view = leaf.view;
+		if (view instanceof ZkTreeView) {
+			view.scrollToActiveNote();
+		}
+	}
 }

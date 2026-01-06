@@ -30,6 +30,10 @@ export class ZkTreeView extends ItemView {
 		this.renderTree();
 	}
 
+	scrollToActiveNote() {
+		this.scrollToActiveFile();
+	}
+
 	async onOpen() {
 		this.contentEl.empty();
 		this.contentEl.addClass("zk-tree-pane");
@@ -149,7 +153,7 @@ export class ZkTreeView extends ItemView {
 			if (activeElement) {
 				activeElement.scrollIntoView({
 					behavior: 'smooth',
-					block: 'nearest',
+					block: 'center',
 					inline: 'nearest'
 				});
 			}
