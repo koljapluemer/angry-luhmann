@@ -1,6 +1,18 @@
-import { Notice, TFile } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 import type AngryLuhmannPlugin from "../plugin";
 import { generateNavigationLink, removeNavigationLinks } from "../utils/navigationLinks";
+
+export async function waitForMetadataCacheUpdate(app: App, file: TFile): Promise<void> {
+	return new Promise((resolve) => {
+		const handler = (changedFile: TFile) => {
+			if (changedFile.path === file.path) {
+				app.metadataCache.off("changed", handler);
+				resolve();
+			}
+		};
+		app.metadataCache.on("changed", handler);
+	});
+}
 
 export function getUniqueNotePath(plugin: AngryLuhmannPlugin, folderPath: string, baseName: string): string {
 	let name = baseName || "Untitled";

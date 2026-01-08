@@ -3,6 +3,7 @@ import type AngryLuhmannPlugin from "../plugin";
 import { findNextTopLevelId } from "../core/data";
 import { VIEW_TYPE_ZK_TREE } from "../utils/constants";
 import { ZkTreeView } from "../ui/views/TreeView";
+import { waitForMetadataCacheUpdate } from "./utils";
 
 export async function placeNoteAtEnd(plugin: AngryLuhmannPlugin, file: TFile) {
 	const cache = plugin.app.metadataCache.getFileCache(file);
@@ -21,9 +22,14 @@ export async function placeNoteAtEnd(plugin: AngryLuhmannPlugin, file: TFile) {
 	});
 
 	new Notice(`Placed note as ${idValue}`);
+
+	// Wait for metadata cache to update with new zk-id
+	await waitForMetadataCacheUpdate(plugin.app, file);
+
+	// Refresh tree (now sees the new zk-id)
 	await plugin.refreshTree();
 
-	// Scroll to the placed note
+	// Scroll to the placed note (now in tree)
 	for (const leaf of plugin.app.workspace.getLeavesOfType(VIEW_TYPE_ZK_TREE)) {
 		const view = leaf.view;
 		if (view instanceof ZkTreeView) {
