@@ -1,16 +1,13 @@
 import { Notice, TFile } from "obsidian";
 import type AngryLuhmannPlugin from "../plugin";
-import { findNextChildId, listPlacableParents } from "../core/data";
+import { findNextChildId, hasValidZkPlacement, listPlacableParents } from "../core/data";
 import { PlaceChildModal } from "../ui/modals/PlaceChildModal";
 import { VIEW_TYPE_ZK_TREE } from "../utils/constants";
 import { ZkTreeView } from "../ui/views/TreeView";
 import { waitForMetadataCacheUpdate } from "./utils";
 
 export async function placeNoteAsChild(plugin: AngryLuhmannPlugin, file: TFile) {
-	const cache = plugin.app.metadataCache.getFileCache(file);
-	const existingId = cache?.frontmatter?.["zk-id"];
-
-	if (existingId !== undefined) {
+	if (hasValidZkPlacement(plugin.app, file)) {
 		new Notice("Note is already placed");
 		return;
 	}

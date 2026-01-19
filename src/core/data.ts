@@ -1,6 +1,57 @@
-import { App } from "obsidian";
+import { App, TFile } from "obsidian";
 import { ZK_ID_PATTERN, ZkEntry } from "./types";
 import { shouldIncludeFile } from "../utils/patterns";
+
+/**
+ * Check if a note has a valid zk-id placement in the tree.
+ * Returns true only if the note has a properly formatted zk-id AND
+ * (for non-top-level notes) a valid parent exists.
+ */
+export function hasValidZkPlacement(app: App, file: TFile): boolean {
+	const cache = app.metadataCache.getFileCache(file);
+	const zkId = cache?.frontmatter?.["zk-id"];
+
+	if (zkId === undefined) {
+		return false;
+	}
+
+	const idStr = String(zkId).trim();
+
+	// "-1" means explicitly outside ZK
+	if (idStr === "-1") {
+		return false;
+	}
+
+	// Must match the pattern
+	if (!ZK_ID_PATTERN.test(idStr)) {
+		return false;
+	}
+
+	// Top-level notes are valid if pattern matches
+	const parts = idStr.split(".");
+	if (parts.length === 1) {
+		return true;
+	}
+
+	// Non-top-level notes need a valid parent
+	const parentId = parts.slice(0, -1).join(".");
+	return hasNoteWithZkId(app, parentId);
+}
+
+/**
+ * Check if any note in the vault has the given zk-id.
+ */
+function hasNoteWithZkId(app: App, zkId: string): boolean {
+	for (const file of app.vault.getMarkdownFiles()) {
+		const cache = app.metadataCache.getFileCache(file);
+		const fileZkId = cache?.frontmatter?.["zk-id"];
+
+		if (fileZkId !== undefined && String(fileZkId).trim() === zkId) {
+			return true;
+		}
+	}
+	return false;
+}
 
 export function collectZkEntries(app: App, excludePatterns = "", useIncludeMode = false): ZkEntry[] {
 	const entries: ZkEntry[] = [];
