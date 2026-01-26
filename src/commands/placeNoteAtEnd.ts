@@ -1,17 +1,16 @@
 import { Notice, TFile } from "obsidian";
 import type AngryLuhmannPlugin from "../plugin";
-import { findNextTopLevelId, hasValidZkPlacement } from "../core/data";
 import { VIEW_TYPE_ZK_TREE } from "../utils/constants";
 import { ZkTreeView } from "../ui/views/TreeView";
 import { waitForMetadataCacheUpdate } from "./utils";
 
 export async function placeNoteAtEnd(plugin: AngryLuhmannPlugin, file: TFile) {
-	if (hasValidZkPlacement(plugin.app, file)) {
+	if (plugin.zkCache.hasValidZkPlacement(file)) {
 		new Notice("Note is already placed");
 		return;
 	}
 
-	const nextId = findNextTopLevelId(plugin.app);
+	const nextId = plugin.zkCache.findNextTopLevelId();
 	const idValue = String(nextId);
 
 	await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {

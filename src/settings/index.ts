@@ -85,6 +85,11 @@ export class AngryLuhmannSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.useIncludeMode = value;
 						await this.plugin.saveSettings();
+						// Rebuild cache with new mode
+						this.plugin.zkCache.updatePatterns(
+							this.plugin.settings.excludePatterns,
+							value
+						);
 						await this.plugin.refreshTree();
 						this.display(); // Re-render to update description
 					})
@@ -116,6 +121,11 @@ export class AngryLuhmannSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.excludePatterns = value;
 						await this.plugin.saveSettings();
+						// Rebuild cache with new patterns
+						this.plugin.zkCache.updatePatterns(
+							value,
+							this.plugin.settings.useIncludeMode
+						);
 						await this.plugin.refreshTree();
 					})
 			);

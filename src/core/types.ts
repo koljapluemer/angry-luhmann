@@ -5,6 +5,10 @@ export interface ZkEntry {
 	file: TFile;
 }
 
+export interface CachedEntry extends ZkEntry {
+	path: string;
+}
+
 export interface ZkNode {
 	id: string;
 	part: number;

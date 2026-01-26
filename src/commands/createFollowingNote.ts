@@ -1,6 +1,5 @@
 import { Notice, TFile } from "obsidian";
 import type AngryLuhmannPlugin from "../plugin";
-import { findNextFollowingId } from "../core/data";
 import { getUniqueNotePath } from "./utils";
 
 export async function createFollowingNote(plugin: AngryLuhmannPlugin, file: TFile) {
@@ -13,7 +12,7 @@ export async function createFollowingNote(plugin: AngryLuhmannPlugin, file: TFil
 	}
 
 	const currentIdStr = String(currentId).trim();
-	const nextId = findNextFollowingId(currentIdStr, plugin.app);
+	const nextId = plugin.zkCache.findNextFollowingId(currentIdStr);
 
 	if (!nextId) {
 		new Notice("Cannot determine next position");

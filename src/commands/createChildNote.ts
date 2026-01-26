@@ -1,6 +1,5 @@
 import { Notice, TFile } from "obsidian";
 import type AngryLuhmannPlugin from "../plugin";
-import { findNextChildId } from "../core/data";
 import { getUniqueNotePath } from "./utils";
 
 export async function createChildNote(plugin: AngryLuhmannPlugin, file: TFile) {
@@ -13,7 +12,7 @@ export async function createChildNote(plugin: AngryLuhmannPlugin, file: TFile) {
 	}
 
 	const parentIdStr = String(parentId);
-	const childId = findNextChildId(parentIdStr, plugin.app);
+	const childId = plugin.zkCache.findNextChildId(parentIdStr);
 
 	const parentFolder = plugin.app.fileManager.getNewFileParent(file.path);
 	const baseName = `Child of ${file.basename}`.trim();

@@ -7,6 +7,7 @@ export class ZkTreeView extends ItemView {
 	private emptyState = EMPTY_STATE_TEXT;
 	private treeEl: HTMLElement | null = null;
 	private collapsedPaths = new Set<string>();
+	private zkIdToPath: Map<string, string> = new Map();
 
 	constructor(leaf: WorkspaceLeaf) {
 		super(leaf);
@@ -27,6 +28,16 @@ export class ZkTreeView extends ItemView {
 	setTree(lines: RenderedZkLine[], emptyState: string) {
 		this.treeLines = lines;
 		this.emptyState = emptyState;
+
+		// Build zkId-to-path lookup map for O(1) lookups
+		this.zkIdToPath.clear();
+		for (const line of lines) {
+			const zkId = this.getZkId(line.file.path);
+			if (zkId) {
+				this.zkIdToPath.set(zkId, line.file.path);
+			}
+		}
+
 		this.renderTree();
 	}
 
@@ -111,14 +122,8 @@ export class ZkTreeView extends ItemView {
 	}
 
 	private getFilePathByZkId(zkId: string): string | null {
-		// Search through treeLines for matching zk-id
-		for (const line of this.treeLines) {
-			const lineZkId = this.getZkId(line.file.path);
-			if (lineZkId === zkId) {
-				return line.file.path;
-			}
-		}
-		return null;
+		// O(1) lookup using the pre-built map
+		return this.zkIdToPath.get(zkId) ?? null;
 	}
 
 	private expandParentsForFile(filePath: string): boolean {

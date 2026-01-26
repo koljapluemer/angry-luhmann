@@ -1,20 +1,19 @@
 import { Notice, TFile } from "obsidian";
 import type AngryLuhmannPlugin from "../plugin";
-import { findNextChildId, hasValidZkPlacement, listPlacableParents } from "../core/data";
 import { PlaceChildModal } from "../ui/modals/PlaceChildModal";
 import { VIEW_TYPE_ZK_TREE } from "../utils/constants";
 import { ZkTreeView } from "../ui/views/TreeView";
 import { waitForMetadataCacheUpdate } from "./utils";
 
 export async function placeNoteAsChild(plugin: AngryLuhmannPlugin, file: TFile) {
-	if (hasValidZkPlacement(plugin.app, file)) {
+	if (plugin.zkCache.hasValidZkPlacement(file)) {
 		new Notice("Note is already placed");
 		return;
 	}
 
-	const parents = listPlacableParents(plugin.app);
+	const parents = plugin.zkCache.listPlacableParents();
 	const modal = new PlaceChildModal(plugin.app, parents, async (parent) => {
-		const nextId = findNextChildId(parent.id, plugin.app);
+		const nextId = plugin.zkCache.findNextChildId(parent.id);
 		await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
 			frontmatter["zk-id"] = String(nextId);
 		});

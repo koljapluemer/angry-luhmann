@@ -3,31 +3,39 @@ import { registerCommands } from "./commands";
 import { EMPTY_STATE_TEXT, VIEW_TYPE_ZK_TREE } from "./utils/constants";
 import { AngryLuhmannSettingTab, AngryLuhmannSettings, DEFAULT_SETTINGS } from "./settings";
 import { ZkTreeView } from "./ui/views/TreeView";
-import { collectZkEntries } from "./core/data";
 import { RenderedZkLine, ZkEntry } from "./core/types";
 import { buildZkTree, renderZkTree } from "./core/tree";
 import { generateMarkdownTree } from "./core/overview";
+import { ZkEntryCache } from "./core/ZkEntryCache";
 
 export default class AngryLuhmannPlugin extends Plugin {
 	private refreshTimer: number | null = null;
 	private overviewUpdateTimer: number | null = null;
 	private isRefreshing = false;
 	settings: AngryLuhmannSettings;
+	zkCache: ZkEntryCache;
 
 	async onload() {
 		await this.loadSettings();
 
+		// Initialize the cache
+		this.zkCache = new ZkEntryCache(this.app);
+
 		this.registerView(VIEW_TYPE_ZK_TREE, (leaf) => new ZkTreeView(leaf));
 
-		this.registerEvent(this.app.vault.on("create", (file) => this.onFileChange(file)));
-		this.registerEvent(this.app.vault.on("modify", (file) => this.onFileChange(file)));
-		this.registerEvent(this.app.vault.on("delete", (file) => this.onFileChange(file)));
+		this.registerEvent(this.app.vault.on("create", (file) => this.onFileCreate(file)));
+		this.registerEvent(this.app.vault.on("modify", (file) => this.onFileModify(file)));
+		this.registerEvent(this.app.vault.on("delete", (file) => this.onFileDelete(file)));
+		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => this.onFileRename(file, oldPath)));
 		this.registerEvent(this.app.metadataCache.on("resolved", () => this.scheduleRefresh()));
 
 		this.addSettingTab(new AngryLuhmannSettingTab(this.app, this));
 		registerCommands(this);
 
 		this.app.workspace.onLayoutReady(() => {
+			// Build initial cache
+			this.zkCache.rebuild(this.settings.excludePatterns, this.settings.useIncludeMode);
+
 			this.initLeaf();
 			this.scheduleRefresh();
 
@@ -53,12 +61,46 @@ export default class AngryLuhmannPlugin extends Plugin {
 		}
 	}
 
-	private onFileChange(file: TAbstractFile) {
+	private onFileCreate(file: TAbstractFile) {
 		if (this.isRefreshing) {
 			return;
 		}
 
 		if (file instanceof TFile && file.extension === "md") {
+			this.zkCache.updateFile(file);
+			this.scheduleRefresh();
+		}
+	}
+
+	private onFileModify(file: TAbstractFile) {
+		if (this.isRefreshing) {
+			return;
+		}
+
+		if (file instanceof TFile && file.extension === "md") {
+			this.zkCache.updateFile(file);
+			this.scheduleRefresh();
+		}
+	}
+
+	private onFileDelete(file: TAbstractFile) {
+		if (this.isRefreshing) {
+			return;
+		}
+
+		if (file instanceof TFile && file.extension === "md") {
+			this.zkCache.removeFile(file.path);
+			this.scheduleRefresh();
+		}
+	}
+
+	private onFileRename(file: TAbstractFile, oldPath: string) {
+		if (this.isRefreshing) {
+			return;
+		}
+
+		if (file instanceof TFile && file.extension === "md") {
+			this.zkCache.renameFile(oldPath, file);
 			this.scheduleRefresh();
 		}
 	}
@@ -92,7 +134,7 @@ export default class AngryLuhmannPlugin extends Plugin {
 		}
 
 		this.isRefreshing = true;
-		const entries: ZkEntry[] = collectZkEntries(this.app, this.settings.excludePatterns, this.settings.useIncludeMode);
+		const entries: ZkEntry[] = this.zkCache.getEntries();
 
 		try {
 			const tree = buildZkTree(entries);
@@ -130,8 +172,8 @@ export default class AngryLuhmannPlugin extends Plugin {
 			return;
 		}
 
-		// Collect entries and render tree
-		const entries = collectZkEntries(this.app, this.settings.excludePatterns, this.settings.useIncludeMode);
+		// Use cached entries (no second vault scan)
+		const entries = this.zkCache.getEntries();
 		const tree = buildZkTree(entries);
 		const lines = renderZkTree(tree);
 

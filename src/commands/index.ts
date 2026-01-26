@@ -1,5 +1,4 @@
 import type AngryLuhmannPlugin from "../plugin";
-import { collectZkEntries } from "../core/data";
 import { placeNoteAtEnd } from "./placeNoteAtEnd";
 import { placeNoteAsChild } from "./placeNoteAsChild";
 import { createChildNote } from "./createChildNote";
