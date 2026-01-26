@@ -85,6 +85,7 @@ function renderNode(node: ZkNode, ancestors: boolean[], isLast: boolean, lines: 
 	const hasChildren = node.children.length > 0;
 
 	lines.push({
+		id: node.id,
 		prefix,
 		name: node.file.basename,
 		file: node.file,

@@ -1,4 +1,4 @@
-import { App, TFile } from "obsidian";
+import { App, CachedMetadata, TFile } from "obsidian";
 import { Minimatch } from "minimatch";
 import { CachedEntry, ZkEntry, ZK_ID_PATTERN } from "./types";
 
@@ -50,8 +50,10 @@ export class ZkEntryCache {
 
 	/**
 	 * Incremental update: add or update a single file.
+	 * @param file - The file to update
+	 * @param cache - Optional pre-fetched metadata cache (avoids stale reads)
 	 */
-	updateFile(file: TFile): void {
+	updateFile(file: TFile, cache?: CachedMetadata | null): void {
 		// Remove old entry if exists
 		const oldEntry = this.entriesByPath.get(file.path);
 		if (oldEntry) {
@@ -60,7 +62,7 @@ export class ZkEntryCache {
 		}
 
 		// Process the file (may add new entry)
-		this.processFile(file);
+		this.processFile(file, cache);
 
 		// Invalidate derived data
 		this.invalidateDerivedData();
@@ -289,7 +291,7 @@ export class ZkEntryCache {
 		return this.useIncludeMode ? matchesAnyPattern : !matchesAnyPattern;
 	}
 
-	private processFile(file: TFile): void {
+	private processFile(file: TFile, providedCache?: CachedMetadata | null): void {
 		// Skip non-markdown files
 		if (file.extension !== "md") {
 			return;
@@ -300,7 +302,8 @@ export class ZkEntryCache {
 			return;
 		}
 
-		const cache = this.app.metadataCache.getFileCache(file);
+		// Use provided cache if available, otherwise fetch (may be stale)
+		const cache = providedCache ?? this.app.metadataCache.getFileCache(file);
 		const zkId = cache?.frontmatter?.["zk-id"];
 
 		if (typeof zkId === "string" || typeof zkId === "number") {

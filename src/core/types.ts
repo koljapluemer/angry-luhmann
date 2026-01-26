@@ -17,6 +17,7 @@ export interface ZkNode {
 }
 
 export interface RenderedZkLine {
+	id: string;
 	prefix: string;
 	name: string;
 	file: TFile;

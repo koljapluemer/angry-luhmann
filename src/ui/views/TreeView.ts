@@ -30,12 +30,10 @@ export class ZkTreeView extends ItemView {
 		this.emptyState = emptyState;
 
 		// Build zkId-to-path lookup map for O(1) lookups
+		// Use line.id directly (from cache) instead of metadata lookup
 		this.zkIdToPath.clear();
 		for (const line of lines) {
-			const zkId = this.getZkId(line.file.path);
-			if (zkId) {
-				this.zkIdToPath.set(zkId, line.file.path);
-			}
+			this.zkIdToPath.set(line.id, line.file.path);
 		}
 
 		this.renderTree();

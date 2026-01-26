@@ -1,4 +1,4 @@
-import { App, Notice, Plugin, TAbstractFile, TFile } from "obsidian";
+import { App, CachedMetadata, Notice, Plugin, TAbstractFile, TFile } from "obsidian";
 import { registerCommands } from "./commands";
 import { EMPTY_STATE_TEXT, VIEW_TYPE_ZK_TREE } from "./utils/constants";
 import { AngryLuhmannSettingTab, AngryLuhmannSettings, DEFAULT_SETTINGS } from "./settings";
@@ -23,8 +23,9 @@ export default class AngryLuhmannPlugin extends Plugin {
 
 		this.registerView(VIEW_TYPE_ZK_TREE, (leaf) => new ZkTreeView(leaf));
 
-		this.registerEvent(this.app.vault.on("create", (file) => this.onFileCreate(file)));
-		this.registerEvent(this.app.vault.on("modify", (file) => this.onFileModify(file)));
+		// Use metadataCache "changed" instead of vault create/modify
+		// This ensures we read metadata AFTER it's updated, not before
+		this.registerEvent(this.app.metadataCache.on("changed", (file, data, cache) => this.onMetadataChanged(file, cache)));
 		this.registerEvent(this.app.vault.on("delete", (file) => this.onFileDelete(file)));
 		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => this.onFileRename(file, oldPath)));
 		this.registerEvent(this.app.metadataCache.on("resolved", () => this.scheduleRefresh()));
@@ -61,24 +62,14 @@ export default class AngryLuhmannPlugin extends Plugin {
 		}
 	}
 
-	private onFileCreate(file: TAbstractFile) {
+	private onMetadataChanged(file: TFile, cache: CachedMetadata) {
 		if (this.isRefreshing) {
 			return;
 		}
 
-		if (file instanceof TFile && file.extension === "md") {
-			this.zkCache.updateFile(file);
-			this.scheduleRefresh();
-		}
-	}
-
-	private onFileModify(file: TAbstractFile) {
-		if (this.isRefreshing) {
-			return;
-		}
-
-		if (file instanceof TFile && file.extension === "md") {
-			this.zkCache.updateFile(file);
+		if (file.extension === "md") {
+			// Pass the cache directly - it's guaranteed fresh
+			this.zkCache.updateFile(file, cache);
 			this.scheduleRefresh();
 		}
 	}
