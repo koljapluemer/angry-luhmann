@@ -143,3 +143,11 @@ function sortChildren(nodes: ZkNode[]) {
 function sortNodes(nodes: ZkNode[]) {
 	return [...nodes].sort((a, b) => a.part - b.part);
 }
+
+export function renderedLinesEqual(a: RenderedZkLine[], b: RenderedZkLine[]): boolean {
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) {
+		if (a[i].id !== b[i].id || a[i].name !== b[i].name) return false;
+	}
+	return true;
+}

@@ -5,7 +5,6 @@ export type OverviewNoteStyle = "indent" | "bullet";
 
 export interface AngryLuhmannSettings {
 	overviewNotePath: string;
-	autoUpdateOverview: boolean;
 	overviewNoteStyle: OverviewNoteStyle;
 	excludePatterns: string;
 	useIncludeMode: boolean;
@@ -13,7 +12,6 @@ export interface AngryLuhmannSettings {
 
 export const DEFAULT_SETTINGS: AngryLuhmannSettings = {
 	overviewNotePath: "",
-	autoUpdateOverview: false,
 	overviewNoteStyle: "indent",
 	excludePatterns: "",
 	useIncludeMode: false,
@@ -44,18 +42,6 @@ export class AngryLuhmannSettingTab extends PluginSettingTab {
 						if (value.trim()) {
 							await this.plugin.updateOverviewNote();
 						}
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Update ZK Overview note automatically")
-			.setDesc("When enabled, the overview note updates automatically after changes. When disabled, only updates on plugin load and manual refresh command.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.autoUpdateOverview)
-					.onChange(async (value) => {
-						this.plugin.settings.autoUpdateOverview = value;
-						await this.plugin.saveSettings();
 					})
 			);
 

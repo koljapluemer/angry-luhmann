@@ -4,7 +4,7 @@ import { EMPTY_STATE_TEXT, VIEW_TYPE_ZK_TREE } from "./utils/constants";
 import { AngryLuhmannSettingTab, AngryLuhmannSettings, DEFAULT_SETTINGS } from "./settings";
 import { ZkTreeView } from "./ui/views/TreeView";
 import { RenderedZkLine, ZkEntry } from "./core/types";
-import { buildZkTree, renderZkTree } from "./core/tree";
+import { buildZkTree, renderZkTree, renderedLinesEqual } from "./core/tree";
 import { generateMarkdownTree } from "./core/overview";
 import { ZkEntryCache } from "./core/ZkEntryCache";
 
@@ -12,6 +12,7 @@ export default class AngryLuhmannPlugin extends Plugin {
 	private refreshTimer: number | null = null;
 	private overviewUpdateTimer: number | null = null;
 	private isRefreshing = false;
+	private lastRenderedLines: RenderedZkLine[] | null = null;
 	settings: AngryLuhmannSettings;
 	zkCache: ZkEntryCache;
 
@@ -50,6 +51,7 @@ export default class AngryLuhmannPlugin extends Plugin {
 	onunload() {
 		this.clearRefreshTimer();
 		this.clearOverviewUpdateTimer();
+		this.lastRenderedLines = null;
 
 		// Detach all leaves of this view type
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_ZK_TREE);
@@ -130,6 +132,12 @@ export default class AngryLuhmannPlugin extends Plugin {
 		try {
 			const tree = buildZkTree(entries);
 			const renderedLines: RenderedZkLine[] = tree.length ? renderZkTree(tree) : [];
+
+			if (this.lastRenderedLines !== null && renderedLinesEqual(this.lastRenderedLines, renderedLines)) {
+				return;
+			}
+			this.lastRenderedLines = renderedLines;
+
 			const emptyState = renderedLines.length ? "" : EMPTY_STATE_TEXT;
 
 			for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_ZK_TREE)) {
@@ -143,10 +151,7 @@ export default class AngryLuhmannPlugin extends Plugin {
 			this.isRefreshing = false;
 		}
 
-		// Schedule overview note update if auto-update is enabled
-		if (this.settings.autoUpdateOverview) {
-			this.scheduleOverviewUpdate();
-		}
+		this.scheduleOverviewUpdate();
 	}
 
 	async loadSettings() {
@@ -163,10 +168,15 @@ export default class AngryLuhmannPlugin extends Plugin {
 			return;
 		}
 
-		// Use cached entries (no second vault scan)
-		const entries = this.zkCache.getEntries();
-		const tree = buildZkTree(entries);
-		const lines = renderZkTree(tree);
+		// Reuse cached lines from refreshTree() if available, otherwise compute fresh
+		let lines: RenderedZkLine[];
+		if (this.lastRenderedLines !== null) {
+			lines = this.lastRenderedLines;
+		} else {
+			const entries = this.zkCache.getEntries();
+			const tree = buildZkTree(entries);
+			lines = tree.length ? renderZkTree(tree) : [];
+		}
 
 		// Generate markdown content
 		const markdown = generateMarkdownTree(lines, this.settings.overviewNoteStyle);
@@ -179,6 +189,10 @@ export default class AngryLuhmannPlugin extends Plugin {
 			// Read existing content to preserve frontmatter
 			const existingContent = await this.app.vault.read(file);
 			const newContent = this.preserveFrontmatter(existingContent, markdown);
+			// Skip write if content hasn't changed
+			if (newContent === existingContent) {
+				return;
+			}
 			await this.app.vault.modify(file, newContent);
 		} else if (!file) {
 			await this.app.vault.create(path, markdown);
@@ -209,11 +223,6 @@ export default class AngryLuhmannPlugin extends Plugin {
 	}
 
 	private scheduleOverviewUpdate() {
-		// Only schedule if auto-update is enabled
-		if (!this.settings.autoUpdateOverview) {
-			return;
-		}
-
 		// Debounce: clear existing timer
 		if (this.overviewUpdateTimer !== null) {
 			window.clearTimeout(this.overviewUpdateTimer);
