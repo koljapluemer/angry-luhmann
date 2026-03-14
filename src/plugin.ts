@@ -29,22 +29,24 @@ export default class AngryLuhmannPlugin extends Plugin {
 		this.registerEvent(this.app.metadataCache.on("changed", (file, data, cache) => this.onMetadataChanged(file, cache)));
 		this.registerEvent(this.app.vault.on("delete", (file) => this.onFileDelete(file)));
 		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => this.onFileRename(file, oldPath)));
-		this.registerEvent(this.app.metadataCache.on("resolved", () => this.scheduleRefresh()));
-
 		this.addSettingTab(new AngryLuhmannSettingTab(this.app, this));
 		registerCommands(this);
 
 		this.app.workspace.onLayoutReady(() => {
-			// Build initial cache
-			this.zkCache.rebuild(this.settings.excludePatterns, this.settings.useIncludeMode);
-
 			this.initLeaf();
-			this.scheduleRefresh();
 
-			// Initial overview note update if path is set
-			if (this.settings.overviewNotePath.trim()) {
-				void this.updateOverviewNote();
-			}
+			// One-time listener: fires when metadata is definitely ready, then unregisters.
+			// Avoids the race condition where onLayoutReady fires before metadataCache is resolved.
+			// Ongoing file changes are handled incrementally via metadataCache "changed".
+			const onResolved = this.app.metadataCache.on("resolved", () => {
+				this.app.metadataCache.offref(onResolved);
+				this.zkCache.rebuild(this.settings.excludePatterns, this.settings.useIncludeMode);
+				this.scheduleRefresh();
+				if (this.settings.overviewNotePath.trim()) {
+					void this.updateOverviewNote();
+				}
+			});
+			this.registerEvent(onResolved);
 		});
 	}
 
