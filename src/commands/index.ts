@@ -6,6 +6,7 @@ import { createFollowingNote } from "./createFollowingNote";
 import { removeFromZk } from "./removeFromZk";
 import { markOutsideZk } from "./markOutsideZk";
 import { reportIllegalNotes } from "./reportIllegalNotes";
+import { deleteIllegalZkIds } from "./deleteIllegalZkIds";
 
 export function registerCommands(plugin: AngryLuhmannPlugin) {
 	plugin.addCommand({
@@ -133,6 +134,14 @@ export function registerCommands(plugin: AngryLuhmannPlugin) {
 		name: "Report illegal zk-id notes",
 		callback: () => {
 			void reportIllegalNotes(plugin);
+		},
+	});
+
+	plugin.addCommand({
+		id: "delete-illegal-zk-ids",
+		name: "Delete zk-id property on illegally placed notes",
+		callback: () => {
+			void deleteIllegalZkIds(plugin);
 		},
 	});
 }
